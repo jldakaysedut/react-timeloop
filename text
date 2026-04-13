@@ -1,0 +1,49 @@
+timeloom-react/
+├─ public/                  <- Dito ilalagay ang logo or static icons ng app mo
+├─ src/
+│  ├─ components/           <- (Dating `user/utilities/`) Mga reusable UI parts
+│  │  ├─ ui/                <- (e.g., Sidebar.jsx, Navbar.jsx, Buttons)
+│  │  ├─ achievements/      <- achievements.jsx
+│  │  ├─ chat/              <- group_chat.jsx, messages.jsx
+│  │  └─ vault/             <- vault_form.jsx, view_vault.jsx
+│  │
+│  ├─ config/               <- (Dating `includes/`)
+│  │  └─ supabaseClient.js  <- Papalit sa `db.php` mo
+│  │
+│  ├─ pages/                <- (Ang mga main screens mo)
+│  │  ├─ admin/             <- (Dating `admin/`)
+│  │  │  ├─ AdminDashboard.jsx
+│  │  │  ├─ EscalatedUsers.jsx
+│  │  │  ├─ ManageUsers.jsx
+│  │  │  └─ AdminProfile.jsx
+│  │  │
+│  │  ├─ moderator/         <- (Dating `moderator/`)
+│  │  │  ├─ ModDashboard.jsx
+│  │  │  ├─ Concerns.jsx
+│  │  │  ├─ Reports.jsx
+│  │  │  └─ ModProfile.jsx
+│  │  │
+│  │  ├─ user/              <- (Dating `user/`)
+│  │  │  ├─ UserDashboard.jsx
+│  │  │  ├─ UserProfile.jsx
+│  │  │  ├─ CalendarPage.jsx
+│  │  │  ├─ LeaderboardPage.jsx
+│  │  │  └─ MapPage.jsx
+│  │  │
+│  │  └─ auth/              <- (Dating nasa labas na login.php, register.php)
+│  │     ├─ Login.jsx
+│  │     └─ Register.jsx
+│  │
+│  ├─ services/             <- (Dating `core/` folders kung nasaan ang mga _logic.php)
+│  │  ├─ adminLogic.js      <- Supabase functions para sa admin
+│  │  ├─ modLogic.js        <- Supabase functions para sa mod
+│  │  ├─ chatLogic.js       <- Supabase functions para sa chat
+│  │  └─ vaultLogic.js      <- Supabase functions para sa vault (fetch, upload, delete)
+│  │
+│  ├─ App.jsx               <- (Dating `index.php`) Dito natin ise-setup ang Routing (kung saan pupunta pag nag-click)
+│  ├─ main.jsx              <- React entry point
+│  └─ index.css             <- Tailwind CSS file
+│
+├─ .env                     <- Dito ilalagay yung Supabase API Keys mo (Huwag i-upload sa GitHub!)
+├─ package.json
+└─ vite.config.js

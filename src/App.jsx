@@ -3,13 +3,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import UserDashboard from './pages/user/UserDashboard'; // IMPORT MO ITO
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ito ang rason bakit LandingPage ang unang lalabas sa localhost:5173/ */}
-        <Route path="/" element={<LandingPage />} />
+        {/* PALITAN NATIN ITO TEMPORARILY PARA MAKITA MO AGAD YUNG DASHBOARD */}
+        <Route path="/" element={<UserDashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>

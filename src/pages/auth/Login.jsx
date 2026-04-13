@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../../config/supabaseClient'; // Added Supabase connection
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -10,12 +11,10 @@ export default function Login() {
   const dotRef = useRef(null);
   const ringRef = useRef(null);
 
-  // Check URL parameters para sa success message
   const searchParams = new URLSearchParams(location.search);
   const isRegistered = searchParams.get('msg') === 'registered';
 
   useEffect(() => {
-    // --- 1. Custom Cursor Logic (Exact copy) ---
     let mx = 0, my = 0, rx = 0, ry = 0;
     let reqId;
 
@@ -41,7 +40,6 @@ export default function Login() {
     window.addEventListener('mousemove', handleMouseMove);
     animateCursor();
 
-    // Hover effects para sa links/buttons
     const links = document.querySelectorAll('a, button');
     const handleMouseEnter = () => {
       if (ringRef.current) {
@@ -73,10 +71,44 @@ export default function Login() {
     };
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Logic will be replaced by Supabase later
-    console.log("Attempting login for:", username);
+    setError('');
+
+    // Search for the user in the Supabase database
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    // Check if user exists (Note: In a pure client-side setup without hashing, we check exact match.
+    // If you used PHP password_hash before, old passwords won't match a plain text check, 
+    // so you will need to create a new user to test this properly).
+    if (!user || user.password !== password) {
+      setError("Invalid username or password.");
+      return;
+    }
+
+    // Check if banned
+    if (user.account_status === 'banned') {
+      setError("Your account has been banned by an administrator.");
+      return;
+    }
+
+    // Success! Save session data
+    localStorage.setItem('user_id', user.id);
+    localStorage.setItem('username', user.username);
+    localStorage.setItem('role', user.role || 'user');
+
+    // Route based on role
+    if (user.role === 'admin') {
+      navigate('/admin/dashboard');
+    } else if (user.role === 'moderator') {
+      navigate('/moderator/dashboard');
+    } else {
+      navigate('/'); // Routes to UserDashboard based on your App.jsx
+    }
   };
 
   return (
@@ -201,7 +233,7 @@ export default function Login() {
           </div>
         </div>
       </div>
-      <div className="page-footer">© 2025 TimeVaulth — Lock memories. Unlock joy. 🧡</div>
+      <div className="page-footer">© 2026 TimeVaulth — Lock memories. Unlock joy. 🧡</div>
     </>
   );
 }

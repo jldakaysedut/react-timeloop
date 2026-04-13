@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../config/supabaseClient'; // Added Supabase connection
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -11,7 +12,7 @@ export default function Register() {
   const ringRef = useRef(null);
 
   useEffect(() => {
-    // --- 1. Custom Cursor Logic (Exact copy mula sa register.php script) ---
+    // --- 1. Custom Cursor Logic (Exact copy) ---
     let mx = 0, my = 0, rx = 0, ry = 0;
     let reqId;
 
@@ -68,17 +69,50 @@ export default function Register() {
     };
   }, []);
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    // I-re-replace natin ito ng Supabase logic mamaya
-    console.log("Registering:", { username, email });
-    // Mock success redirect
-    navigate('/login?msg=registered');
+    setError('');
+
+    try {
+      // 1. Check if username or email already exists in your database
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .or(`username.eq.${username},email.eq.${email}`);
+
+      if (checkError) throw checkError;
+
+      if (existingUser && existingUser.length > 0) {
+        setError("Username or email already taken.");
+        return;
+      }
+
+      // 2. Insert the new user into your Supabase 'users' table
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([
+          { 
+            username: username, 
+            email: email, 
+            password: password, // Note: For a real app, passwords should be hashed. We are using plain text to match your current setup easily.
+            role: 'user',
+            account_status: 'active'
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      // 3. Success! Redirect to login page with success message
+      navigate('/login?msg=registered');
+      
+    } catch (err) {
+      console.error(err);
+      setError("Registration failed. Please try again.");
+    }
   };
 
   return (
     <>
-      {/* 100% EXACT CSS Mula sa register.php */}
       <style>{`
         :root{--bg:#FFE4DC;--v2:#FF9A8B;--v3:#FF4F3B;--v4:#FF4F3B;--v5:#FF6B5B;--v6:#FF9A8B;--pink:#D63B28;--teal:#1D9E75;--gold:#E08C00;--white:#FFFFFF;--t2:#7A4A42;--t3:#B08080;--border:rgba(255,79,59,.32)}
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -131,7 +165,6 @@ export default function Register() {
         @media(max-width:780px){.auth-grid{grid-template-columns:1fr}.auth-left{display:none}.topbar{padding:.9rem 1.5rem}}
       `}</style>
 
-      {/* HTML Structure */}
       <div id="dot" ref={dotRef}></div>
       <div id="ring" ref={ringRef}></div>
 
@@ -212,14 +245,14 @@ export default function Register() {
                 <div className="pw-hint">Minimum 6 characters</div>
               </div>
               <button type="submit" className="btn-submit">Create My Account 🚀</button>
-              <div className="terms-note">By creating an account, you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.</div>
+              <div className="terms-note">By creating an account, you agree to our <Link to="#">Terms</Link> &amp; <Link to="#">Privacy Policy</Link>.</div>
             </form>
             <div className="divider">or</div>
             <div className="card-foot">Already a member? <Link to="/login">Sign in here</Link></div>
           </div>
         </div>
       </div>
-      <div className="page-footer">© 2025 TimeVaulth — Lock memories. Unlock joy. 🧡</div>
+      <div className="page-footer">© 2026 TimeVaulth — Lock memories. Unlock joy. 🧡</div>
     </>
   );
 }

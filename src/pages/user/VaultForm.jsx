@@ -257,29 +257,44 @@ export default function VaultForm() {
         const fileExt = coverFile.name.split('.').pop();
         const fileName = `${Date.now()}_cover_${user.username.split('@')[0]}.${fileExt}`;
         finalCoverPath = `uploads/${fileName}`;
-        await supabase.storage.from('vault_assets').upload(finalCoverPath, coverFile);
+        const { error: uploadError } = await supabase.storage.from('vault_assets').upload(finalCoverPath, coverFile);
+        if (uploadError) throw uploadError;
       }
 
+      // DITO YUNG FIX: Laging isama ang user_id kapag bagong gawa
       const vaultData = {
-        title: vault.title, story: vault.story, mood: vault.mood, unlock_date: vault.unlock_date,
-        visibility: vault.visibility, capsule_color: vault.capsule_color, capsule_design: vault.capsule_design,
-        cover_path: finalCoverPath, target_lat: vault.target_lat, target_lng: vault.target_lng
+        title: vault.title, 
+        story: vault.story, 
+        mood: vault.mood, 
+        unlock_date: vault.unlock_date,
+        visibility: vault.visibility, 
+        capsule_color: vault.capsule_color, 
+        capsule_design: vault.capsule_design,
+        cover_path: finalCoverPath, 
+        target_lat: vault.target_lat, 
+        target_lng: vault.target_lng
       };
 
+      // Kapag walang editId, ibig sabihin NEW vault ito, kaya ipasa ang user.id
+      if (!editId) {
+        vaultData.user_id = user.id;
+      }
+
+      // Alamin ang status
       if (actionType === 'seal') {
         vaultData.status = 'sealed';
         vaultData.sealed_at = new Date().toISOString();
-      } else if (mode === 'create') {
+      } else if (mode === 'create' || mode === 'draft') {
         vaultData.status = 'draft';
-        vaultData.user_id = user.id;
       }
 
       let newVaultId = editId;
       if (editId) {
-        await supabase.from('vaults').update(vaultData).eq('id', editId);
+        const { error: updateError } = await supabase.from('vaults').update(vaultData).eq('id', editId);
+        if (updateError) throw updateError;
       } else {
-        const { data, error } = await supabase.from('vaults').insert([vaultData]).select().single();
-        if(error) throw error;
+        const { data, error: insertError } = await supabase.from('vaults').insert([vaultData]).select().single();
+        if (insertError) throw insertError;
         newVaultId = data.id;
       }
 
@@ -308,7 +323,8 @@ export default function VaultForm() {
       navigate('/my-vaults');
     } catch (err) {
       console.error(err);
-      alert("Error saving vault.");
+      alert("Error saving vault: " + err.message); // Mas malinaw na error alert
+    } finally {
       setSubmitting(false);
     }
   };

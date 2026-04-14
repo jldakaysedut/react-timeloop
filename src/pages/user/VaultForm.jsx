@@ -92,7 +92,6 @@ export default function VaultForm() {
       const { data } = await supabase.from('users').select('*').eq('id', uid).single();
       if (data) setUser(data);
       
-      // Load Local Storage Draft if new
       if (!editId) {
         const saved = localStorage.getItem(draftKey);
         if (saved) {
@@ -104,7 +103,6 @@ export default function VaultForm() {
     fetchUser();
   }, [editId, navigate, draftKey]);
 
-  // Cursor Logic
   useEffect(() => {
     let mx = 0, my = 0, rx = 0, ry = 0, reqId;
     const handleMouseMove = (e) => { mx = e.clientX; my = e.clientY; if(dotRef.current){dotRef.current.style.left=mx+'px';dotRef.current.style.top=my+'px'} };
@@ -113,7 +111,6 @@ export default function VaultForm() {
     return () => { window.removeEventListener('mousemove', handleMouseMove); cancelAnimationFrame(reqId); };
   }, []);
 
-  // Update Progress & Autosave
   useEffect(() => {
     if (loading) return;
     const checks = [
@@ -132,7 +129,6 @@ export default function VaultForm() {
     return () => clearTimeout(tmr);
   }, [vault, coverPreview, loading, draftKey]);
 
-  // Countdown Updater
   useEffect(() => {
     if (!vault.unlock_date) { setCd(null); return; }
     const unlockTime = new Date(vault.unlock_date).getTime();
@@ -224,7 +220,6 @@ export default function VaultForm() {
 
   return (
     <>
-      {/* 100% EXACT CSS FROM YOUR PROVIDED vault_form.php */}
       <style>{`
         :root{
           --coral:#FF6B5B;--coral-l:#FFE8E4;--coral-d:#E8503F;
@@ -237,14 +232,12 @@ export default function VaultForm() {
         html{scroll-behavior:smooth}
         body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);display:flex;height:100vh;overflow:hidden;cursor:none}
 
-        /* ── CURSOR ── */
         #cur-dot{position:fixed;width:9px;height:9px;background:var(--coral);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s}
         #cur-ring{position:fixed;width:26px;height:26px;border:2px solid var(--coral);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s var(--easing),top .1s var(--easing),width .2s,height .2s,opacity .2s;opacity:.45}
 
-        /* ── ROOT ── */
-        .root{display:flex;width:100%;padding:16px;gap:12px}
+        /* DITO YUNG FIX PARA MAKA-SCROLL! */
+        .root{display:flex;height:100vh;width:100%;overflow:hidden;padding:16px;gap:12px}
 
-        /* ── SIDEBAR ── */
         .l-sidebar{width:72px;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:0 0 12px;overflow:hidden;flex-shrink:0;transition:width .35s var(--easing),min-width .35s var(--easing)}
         .l-sidebar.wide{width:200px;min-width:200px}
         .ls-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--bdr);flex-shrink:0;min-height:58px;width:100%}
@@ -267,14 +260,15 @@ export default function VaultForm() {
         .ls-bottom{padding:.75rem .5rem;border-top:1px solid var(--bdr);flex-shrink:0;width:100%}
         .ls-selfav-wrap{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:14px;text-decoration:none;transition:background .25s var(--easing);overflow:hidden;cursor:none}
         .ls-selfav-wrap:hover{background:var(--coral-l)}
-        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden;transition:transform .25s var(--easing)}
+        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .25s var(--easing)}
         .ls-selfav-wrap:hover .ls-selfav{transform:scale(1.08)}
+        .ls-selfav-inner{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--coral),#FF9A8B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden}
+        .ls-selfav-inner img{width:100%;height:100%;object-fit:cover}
         .ls-selfinfo{overflow:hidden;opacity:0;max-width:0;transition:opacity .2s .05s,max-width .3s var(--easing)}
         .l-sidebar.wide .ls-selfinfo{opacity:1;max-width:130px}
         .ls-selfname{font-size:.76rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
         .ls-selfrole{font-size:.6rem;color:var(--txt3);display:block;white-space:nowrap}
 
-        /* ── MAIN CARD ── */
         .main-card{flex:1;min-width:0;background:var(--white);border-radius:28px;box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden}
         .mc-top{display:flex;align-items:center;gap:12px;padding:18px 24px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,.04)}
         .mc-title{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--txt);white-space:nowrap}
@@ -291,25 +285,6 @@ export default function VaultForm() {
         .mc-body::-webkit-scrollbar{width:5px}
         .mc-body::-webkit-scrollbar-thumb{background:var(--coral-l);border-radius:10px}
 
-        /* ── PHASE BANNER ── */
-        .phase-banner{
-          display:flex;align-items:center;gap:12px;
-          padding:14px 18px;border-radius:18px;margin-bottom:20px;
-          animation:fadeUp .4s var(--easing) both;
-        }
-        .phase-banner.draft{background:rgba(29,158,117,.08);border:1.5px solid rgba(29,158,117,.2)}
-        .phase-banner.grace{background:rgba(245,166,35,.1);border:1.5px solid rgba(245,166,35,.3)}
-        .phase-banner.collaborator{background:rgba(91,138,245,.08);border:1.5px solid rgba(91,138,245,.2)}
-        .phase-ico{font-size:1.4rem;flex-shrink:0}
-        .phase-info{flex:1}
-        .phase-name{font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--txt)}
-        .phase-sub{font-size:.72rem;color:var(--txt2);font-weight:600;margin-top:2px}
-        .phase-tag{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:100px;white-space:nowrap}
-        .phase-tag.draft{background:var(--teal-l);color:var(--teal)}
-        .phase-tag.grace{background:rgba(245,166,35,.15);color:#9A6900}
-        .phase-tag.collaborator{background:rgba(91,138,245,.12);color:#3B5FD9}
-
-        /* ── PROGRESS STRIP ── */
         .progress-strip{display:flex;align-items:center;gap:1rem;padding:16px 20px;background:var(--surf);border-radius:20px;margin-bottom:24px;border:1.5px solid var(--bdr)}
         .ps-label{font-size:.75rem;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
         .ps-track{flex:1;height:6px;background:rgba(0,0,0,.05);border-radius:100px;overflow:hidden}
@@ -319,20 +294,12 @@ export default function VaultForm() {
         .ps-dot{width:10px;height:10px;border-radius:50%;background:var(--bdr);transition:all .3s var(--easing)}
         .ps-dot.on{background:var(--coral);box-shadow:0 0 0 3px var(--coral-l)}
 
-        /* ── ALERTS ── */
-        .alert{display:flex;align-items:center;gap:.55rem;padding:1rem 1.2rem;border-radius:16px;font-size:.85rem;font-weight:700;margin-bottom:1.5rem}
-        .alert-red{background:var(--coral-l);border:1px solid rgba(255,107,91,.2);color:var(--coral-d)}
-        .alert-teal{background:var(--teal-l);border:1px solid rgba(29,158,117,.2);color:var(--teal)}
-        .alert-gold{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:#B87900}
-
-        /* ── FORM CARDS ── */
         .v-card{background:var(--white);border:1.5px solid var(--bdr);border-radius:24px;padding:24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.02);transition:all .3s var(--easing);animation:fadeUp .45s var(--easing) both}
         .v-card:hover{border-color:rgba(255,107,91,.3);box-shadow:0 8px 30px rgba(255,107,91,.08)}
         .v-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
         .v-card-title{font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:8px}
         .v-card-step{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:100px;background:var(--surf);color:var(--txt2);border:1px solid var(--bdr)}
 
-        /* ── INPUTS ── */
         .fg{margin-bottom:1.2rem}
         .fg:last-child{margin-bottom:0}
         .fg-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
@@ -349,14 +316,12 @@ export default function VaultForm() {
         .fg-count.warn{color:var(--gold)}
         .fg-count.over{color:var(--coral)}
 
-        /* ── MOOD ── */
         .mood-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
         .mood-btn{padding:12px;border-radius:16px;background:var(--surf);border:2px solid transparent;color:var(--txt2);font-size:.85rem;font-weight:700;cursor:none;transition:all .3s var(--easing);text-align:center;font-family:'Nunito',sans-serif}
         .mood-btn:hover{background:var(--white);border-color:var(--coral-l);color:var(--coral);transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,107,91,.1)}
         .mood-btn.picked{background:var(--coral-l);border-color:var(--coral);color:var(--coral)}
         .mood-tip{margin-top:12px;padding:12px 16px;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;font-size:.8rem;color:var(--txt2);display:flex;align-items:flex-start;gap:8px;font-weight:600}
 
-        /* ── DATE SHORTCUTS ── */
         .shortcuts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
         .sc-btn{padding:6px 14px;background:var(--surf);border:1.5px solid transparent;border-radius:10px;color:var(--txt2);font-size:.75rem;font-weight:700;cursor:none;transition:all .2s;font-family:'Nunito',sans-serif}
         .sc-btn:hover{background:var(--coral-l);border-color:var(--coral);color:var(--coral);transform:translateY(-2px)}
@@ -364,14 +329,6 @@ export default function VaultForm() {
         .countdown.on{display:flex}
         .cd-dot{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
 
-        /* ── LOCATION ── */
-        .loc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;font-size:.85rem}
-        .loc-coords{color:var(--teal);font-weight:800}
-        .loc-none{color:var(--txt3);font-weight:700}
-        .loc-link{font-size:.75rem;font-weight:800;color:var(--coral);text-decoration:none;padding:6px 12px;border-radius:10px;background:var(--coral-l);transition:all .2s;cursor:none}
-        .loc-link:hover{background:var(--coral);color:#fff;transform:translateY(-2px)}
-
-        /* ── VISIBILITY ── */
         .vis-pills{display:flex;flex-direction:column;gap:10px}
         .vis-pill{display:flex;align-items:center;gap:16px;padding:16px;border-radius:20px;background:var(--surf);border:2px solid transparent;cursor:none;transition:all .3s var(--easing)}
         .vis-pill:hover{border-color:var(--coral-l);background:var(--white);box-shadow:0 4px 16px rgba(0,0,0,.03)}
@@ -384,55 +341,24 @@ export default function VaultForm() {
         .vis-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:all .3s var(--easing);flex-shrink:0;background:var(--white)}
         .vis-pill.picked .vis-check{background:var(--coral);border-color:var(--coral)}
 
-        /* ── SLOT BAR ── */
-        .slot-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;font-size:.8rem;font-weight:700;color:var(--txt2)}
-        .slot-bar.warn{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3);color:#A06A00}
-        .slot-bar.full{background:var(--coral-l);border-color:rgba(255,107,91,.3);color:var(--coral-d)}
-        .slot-pips{display:flex;gap:4px}
-        .slot-pip{width:10px;height:8px;border-radius:3px;background:var(--coral)}
-        .slot-pip.empty{background:var(--bdr)}
-
-        /* ── CAPSULE COSMETICS ── */
         .capsule-colors{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-        .cc-swatch{
-          width:36px;height:36px;border-radius:50%;border:3px solid transparent;
-          cursor:none;transition:all .25s var(--easing);position:relative;
-        }
+        .cc-swatch{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:none;transition:all .25s var(--easing);position:relative;}
         .cc-swatch:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,.15)}
         .cc-swatch.picked{border-color:var(--txt);box-shadow:0 0 0 3px rgba(0,0,0,.12)}
         .cc-swatch::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:900;opacity:0;transition:opacity .2s}
         .cc-swatch.picked::after{opacity:1}
 
         .design-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
-        .design-btn{
-          padding:12px 8px;border-radius:16px;background:var(--surf);
-          border:2px solid transparent;cursor:none;transition:all .3s var(--easing);
-          text-align:center;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;color:var(--txt2);
-          display:flex;flex-direction:column;align-items:center;gap:6px;
-        }
+        .design-btn{padding:12px 8px;border-radius:16px;background:var(--surf);border:2px solid transparent;cursor:none;transition:all .3s var(--easing);text-align:center;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;color:var(--txt2);display:flex;flex-direction:column;align-items:center;gap:6px;}
         .design-btn:hover:not(.locked){background:var(--white);border-color:var(--coral-l);color:var(--coral);transform:translateY(-2px)}
         .design-btn.picked{background:var(--coral-l);border-color:var(--coral);color:var(--coral)}
         .design-btn.locked{opacity:.4;cursor:not-allowed;position:relative}
         .design-btn.locked::after{content:'🔒';font-size:.7rem;position:absolute;top:6px;right:6px}
-        /* ── Per-design premium picked styles ── */
-        .design-btn[data-design="default"].picked{background:#FFE8E4;border-color:#FF6B5B;color:#E8503F;box-shadow:0 4px 16px rgba(255,107,91,.35)}
-        .design-btn[data-design="classic"].picked{background:#FEF3C7;border-color:#8B6914;color:#8B6914;box-shadow:0 4px 16px rgba(139,105,20,.3)}
-        .design-btn[data-design="pastel"].picked{background:linear-gradient(135deg,#fce4ec,#f8bbd0);border-color:#f06292;color:#ad1457;box-shadow:0 4px 18px rgba(240,98,146,.35)}
-        .design-btn[data-design="midnight"].picked{background:linear-gradient(135deg,#1a1a2e,#16213e);border-color:#7c3aed;color:#c4b5fd;box-shadow:0 4px 18px rgba(124,58,237,.5),inset 0 0 12px rgba(124,58,237,.15)}
-        .design-btn[data-design="aurora"].picked{background:linear-gradient(135deg,#ede9fe,#ddd6fe);border-color:#7c3aed;color:#5b21b6;box-shadow:0 4px 18px rgba(124,58,237,.4);animation:auroraPulse 2s ease-in-out infinite}
-        @keyframes auroraPulse{0%,100%{box-shadow:0 4px 18px rgba(124,58,237,.4)}50%{box-shadow:0 4px 24px rgba(124,58,237,.7),0 0 8px rgba(124,58,237,.3)}}
-        .design-btn[data-design="obsidian"].picked{background:linear-gradient(135deg,#111111,#1a1a1a);border-color:#444;color:#e5e7eb;box-shadow:0 4px 18px rgba(0,0,0,.6),inset 0 0 8px rgba(255,255,255,.05)}
-        .design-btn[data-design="sakura"].picked{background:linear-gradient(135deg,#fce4ec,#f8bbd0);border-color:#e91e8c;color:#880e4f;box-shadow:0 4px 18px rgba(233,30,140,.35)}
         .design-ico{font-size:1.4rem}
-        .tier-hint{font-size:.62rem;font-weight:800;padding:2px 7px;border-radius:100px;margin-top:2px}
-        .tier-hint.pro{background:rgba(245,166,35,.15);color:#9A6900}
-        .tier-hint.ultra{background:rgba(155,89,182,.12);color:#7D3C98}
 
-        /* ── DROP ZONES ── */
         .drop-zone{border:2px dashed var(--bdr);border-radius:24px;padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--surf);transition:all .3s var(--easing);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;overflow:hidden}
         .drop-zone:hover,.drop-zone.over{border-color:var(--coral);background:var(--coral-l);transform:scale(1.01)}
         .drop-zone.has-cover{padding:0;border-color:transparent}
-        .drop-zone.has-files{padding:20px;justify-content:flex-start}
         .dz-content{position:relative;z-index:5;pointer-events:none}
         .dz-ico{font-size:2rem;margin-bottom:8px;display:block}
         .dz-title{font-size:.9rem;font-weight:800;color:var(--txt);margin-bottom:4px;transition:color .2s}
@@ -442,30 +368,30 @@ export default function VaultForm() {
         .cover-preview{width:100%;height:100%;object-fit:cover;display:block}
         .cover-rm{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border:none;color:#fff;font-size:1rem;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:20}
         .cover-rm:hover{background:var(--coral);transform:scale(1.1);box-shadow:0 4px 12px rgba(255,107,91,.4)}
-        .file-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:12px;margin-top:16px;width:100%;pointer-events:auto;text-align:left}
-        .ft-item{border-radius:14px;overflow:hidden;aspect-ratio:1;position:relative;border:1.5px solid var(--bdr);background:var(--surf);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.02);transition:all .3s}
-        .ft-item:hover{transform:translateY(-3px);box-shadow:0 8px 16px rgba(0,0,0,.06);border-color:rgba(255,107,91,.4)}
-        .ft-item img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:0}
-        .ft-item.file{background:linear-gradient(135deg,var(--surf),var(--white));padding:10px}
-        .ft-ico{font-size:2rem;z-index:1;margin-bottom:4px}
-        .ft-name{font-size:.65rem;color:var(--txt2);text-align:center;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;font-weight:800;z-index:1}
-        .ft-uploader{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:.55rem;font-weight:800;text-align:center;padding:3px;z-index:5}
-        .ft-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border:none;color:#fff;font-size:.8rem;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:20;opacity:0;transform:scale(.8)}
-        .ft-item:hover .ft-rm{opacity:1;transform:scale(1)}
-        .ft-rm:hover{background:var(--coral);box-shadow:0 4px 12px rgba(255,107,91,.4)}
-        .ft-rm.disabled{display:none}
-        .file-total{display:none;align-items:center;gap:6px;margin-top:12px;font-size:.85rem;color:var(--txt3);font-weight:800}
-        .file-total.on{display:flex}
 
-        /* ── RIGHT PANEL ── */
-        .r-panel{width:300px;min-width:300px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease}
+        /* ── RIGHT PANEL (SCROLL & LAYOUT FIXED) ── */
+        .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease; overflow:hidden;}
         .r-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.12) 0%,transparent 60%),radial-gradient(circle at 10% 80%,rgba(255,255,255,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
-        .rp-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;padding:24px;overflow-y:auto;scrollbar-width:none}
-        .rp-header{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+        
+        .rp-inner{
+          position:relative;
+          z-index:1;
+          display:flex;
+          flex-direction:column;
+          flex:1;
+          min-height:0; /* ITO YUNG NAGPA-SCROLL */
+          padding:24px;
+          overflow-y:auto;
+          scrollbar-width:thin;
+          scrollbar-color:rgba(255,255,255,.4) transparent;
+        }
+        .rp-inner::-webkit-scrollbar{width:6px}
+        .rp-inner::-webkit-scrollbar-thumb{background:rgba(255,255,255,.4);border-radius:10px}
+
+        .rp-header{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
         .live-dot{width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 2s infinite}
 
-        /* Preview card */
-        .preview-card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:24px;padding:16px;backdrop-filter:blur(10px);width:100%;margin-bottom:20px;animation:fadeUp .5s .16s var(--easing) both;transition:box-shadow .4s ease}
+        .preview-card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:24px;padding:16px;backdrop-filter:blur(10px);width:100%;margin-bottom:20px;animation:fadeUp .5s .16s var(--easing) both;transition:box-shadow .4s ease;flex-shrink:0}
         .preview-cover-ph{width:100%;height:130px;background:rgba(255,255,255,.1);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:14px}
         .preview-cover{width:100%;height:130px;object-fit:cover;border-radius:16px;margin-bottom:14px;display:none}
         .preview-capsule-dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle;flex-shrink:0}
@@ -478,29 +404,42 @@ export default function VaultForm() {
         .preview-date{font-size:.68rem;color:#fff;font-weight:800}
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
 
-        /* ── THE EXACT PHP STATS BOXES CLASSES ── */
-        .rp-stat-row{display:flex;gap:10px;margin-bottom:16px}
-        .rp-mini-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 12px;text-align:center}
-        .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#fff;display:block}
-        .rp-mini-lbl{font-size:.58rem;font-weight:800;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.08em;display:block;margin-top:2px}
+        /* ── STATS BOXES FIX (Ginawang divs para siguradong magpatong) ── */
+        .rp-stat-row{display:flex;gap:10px;margin-bottom:24px;flex-shrink:0}
+        .rp-mini-stat{
+          flex:1;
+          background:rgba(255,255,255,.15);
+          border:1px solid rgba(255,255,255,.2);
+          border-radius:14px;
+          padding:12px 8px;
+          text-align:center;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+        }
+        .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;line-height:1;margin-bottom:4px}
+        .rp-mini-lbl{font-size:.6rem;font-weight:800;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em}
 
-        /* Submit area */
-        .submit-wrap{margin-top:auto;animation:fadeUp .5s .2s var(--easing) both;display:flex;flex-direction:column;gap:10px}
+        .submit-wrap{margin-top:auto;animation:fadeUp .5s .2s var(--easing) both;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
         .btn-seal{width:100%;padding:16px;background:#fff;border:none;border-radius:100px;color:var(--coral);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:900;cursor:none;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);transition:all .3s var(--easing)}
         .btn-seal:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(0,0,0,.25)}
         .btn-seal.loading{opacity:.7;pointer-events:none}
         .btn-cancel-link{display:block;text-align:center;font-size:.78rem;font-weight:800;color:rgba(255,255,255,.75);text-decoration:none;transition:color .2s;padding:8px;border-radius:100px;border:1.5px solid transparent}
         .btn-cancel-link:hover{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
 
+        #autosaveToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--white);border:1.5px solid var(--coral-l);border-radius:100px;padding:8px 20px;font-size:.85rem;font-weight:800;color:var(--coral);box-shadow:0 12px 30px rgba(255,107,91,.15);display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;z-index:1000;transition:all .4s var(--easing)}
+        #autosaveToast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
-
         @media(max-width:1000px){.r-panel{display:none}}
         @media(max-width:700px){.l-sidebar{display:none}.root{padding:8px;gap:8px}.mc-body{padding:20px}}
       `}</style>
 
       <div id="cur-dot" ref={dotRef}></div>
       <div id="cur-ring" ref={ringRef}></div>
+      <div id="autosaveToast" className={toastMsg ? 'on' : ''}>{toastMsg}</div>
 
       <div className="root">
         {/* ════ SIDEBAR ════ */}
@@ -717,11 +656,20 @@ export default function VaultForm() {
               </div>
             </div>
 
-            {/* ITO NA YUNG CSS FIX PARA SA TATLONG BOXES */}
+            {/* FIX: GINAWANG DIV ANG LAMAN PARA SAPILITANG MAGPATONG */}
             <div className="rp-stat-row">
-              <div className="rp-mini-stat"><span className="rp-mini-val">0</span><span className="rp-mini-lbl">Collabs</span></div>
-              <div className="rp-mini-stat"><span className="rp-mini-val">0</span><span className="rp-mini-lbl">Recipients</span></div>
-              <div className="rp-mini-stat"><span className="rp-mini-val">0</span><span className="rp-mini-lbl">Files</span></div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">0</div>
+                <div className="rp-mini-lbl">Collabs</div>
+              </div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">0</div>
+                <div className="rp-mini-lbl">Recipients</div>
+              </div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">0</div>
+                <div className="rp-mini-lbl">Files</div>
+              </div>
             </div>
 
             <div className="submit-wrap">

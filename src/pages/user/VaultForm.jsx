@@ -214,8 +214,8 @@ export default function VaultForm() {
 
   if (loading) return null;
 
-  const myBrd = borderCss[user.equipped_border] || borderCss['border-none'];
-  const usernameShort = user.username.split('@')[0];
+  const myBrd = borderCss[user?.equipped_border] || borderCss['border-none'];
+  const usernameShort = user?.username ? user.username.split('@')[0] : 'User';
   const rPanelGrad = getCapsuleGradient(vault.capsule_color, vault.capsule_design);
 
   return (
@@ -230,14 +230,26 @@ export default function VaultForm() {
         }
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth}
-        body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);display:flex;height:100vh;overflow:hidden;cursor:none}
+        body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);cursor:none}
 
+        /* ── CURSOR ── */
         #cur-dot{position:fixed;width:9px;height:9px;background:var(--coral);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s}
         #cur-ring{position:fixed;width:26px;height:26px;border:2px solid var(--coral);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s var(--easing),top .1s var(--easing),width .2s,height .2s,opacity .2s;opacity:.45}
 
-        /* DITO YUNG FIX PARA MAKA-SCROLL! */
-        .root{display:flex;height:100vh;width:100%;overflow:hidden;padding:16px;gap:12px}
+        /* ── BULLETPROOF VIEWPORT WRAPPER (Fixes scroll & cut-off issues) ── */
+        .viewport-wrapper {
+          position: fixed;
+          inset: 0; /* locks to top:0, left:0, right:0, bottom:0 */
+          display: flex;
+          padding: 16px;
+          gap: 12px;
+          background: var(--peach);
+          overflow: hidden;
+          box-sizing: border-box;
+          z-index: 1;
+        }
 
+        /* ── SIDEBAR ── */
         .l-sidebar{width:72px;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:0 0 12px;overflow:hidden;flex-shrink:0;transition:width .35s var(--easing),min-width .35s var(--easing)}
         .l-sidebar.wide{width:200px;min-width:200px}
         .ls-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--bdr);flex-shrink:0;min-height:58px;width:100%}
@@ -269,7 +281,8 @@ export default function VaultForm() {
         .ls-selfname{font-size:.76rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
         .ls-selfrole{font-size:.6rem;color:var(--txt3);display:block;white-space:nowrap}
 
-        .main-card{flex:1;min-width:0;background:var(--white);border-radius:28px;box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden}
+        /* ── MAIN CARD ── */
+        .main-card{flex:1;min-width:0;min-height:0;background:var(--white);border-radius:28px;box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden}
         .mc-top{display:flex;align-items:center;gap:12px;padding:18px 24px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,.04)}
         .mc-title{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--txt);white-space:nowrap}
         .mc-spacer{flex:1}
@@ -285,21 +298,24 @@ export default function VaultForm() {
         .mc-body::-webkit-scrollbar{width:5px}
         .mc-body::-webkit-scrollbar-thumb{background:var(--coral-l);border-radius:10px}
 
+        /* ── PROGRESS STRIP ── */
         .progress-strip{display:flex;align-items:center;gap:1rem;padding:16px 20px;background:var(--surf);border-radius:20px;margin-bottom:24px;border:1.5px solid var(--bdr)}
         .ps-label{font-size:.75rem;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
         .ps-track{flex:1;height:6px;background:rgba(0,0,0,.05);border-radius:100px;overflow:hidden}
         .ps-fill{height:100%;background:var(--coral);border-radius:100px;width:0%;transition:width .45s var(--easing)}
         .ps-pct{font-size:.8rem;font-weight:800;color:var(--coral);min-width:36px;text-align:right}
-        .ps-dots{display:flex;gap:6px}
+        .ps-dots{display:flex;align-items:center;gap:6px}
         .ps-dot{width:10px;height:10px;border-radius:50%;background:var(--bdr);transition:all .3s var(--easing)}
         .ps-dot.on{background:var(--coral);box-shadow:0 0 0 3px var(--coral-l)}
 
+        /* ── FORM CARDS ── */
         .v-card{background:var(--white);border:1.5px solid var(--bdr);border-radius:24px;padding:24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.02);transition:all .3s var(--easing);animation:fadeUp .45s var(--easing) both}
         .v-card:hover{border-color:rgba(255,107,91,.3);box-shadow:0 8px 30px rgba(255,107,91,.08)}
         .v-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
         .v-card-title{font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:8px}
         .v-card-step{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:100px;background:var(--surf);color:var(--txt2);border:1px solid var(--bdr)}
 
+        /* ── INPUTS ── */
         .fg{margin-bottom:1.2rem}
         .fg:last-child{margin-bottom:0}
         .fg-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
@@ -316,12 +332,14 @@ export default function VaultForm() {
         .fg-count.warn{color:var(--gold)}
         .fg-count.over{color:var(--coral)}
 
+        /* ── MOOD ── */
         .mood-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
         .mood-btn{padding:12px;border-radius:16px;background:var(--surf);border:2px solid transparent;color:var(--txt2);font-size:.85rem;font-weight:700;cursor:none;transition:all .3s var(--easing);text-align:center;font-family:'Nunito',sans-serif}
         .mood-btn:hover{background:var(--white);border-color:var(--coral-l);color:var(--coral);transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,107,91,.1)}
         .mood-btn.picked{background:var(--coral-l);border-color:var(--coral);color:var(--coral)}
         .mood-tip{margin-top:12px;padding:12px 16px;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;font-size:.8rem;color:var(--txt2);display:flex;align-items:flex-start;gap:8px;font-weight:600}
 
+        /* ── DATE SHORTCUTS ── */
         .shortcuts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
         .sc-btn{padding:6px 14px;background:var(--surf);border:1.5px solid transparent;border-radius:10px;color:var(--txt2);font-size:.75rem;font-weight:700;cursor:none;transition:all .2s;font-family:'Nunito',sans-serif}
         .sc-btn:hover{background:var(--coral-l);border-color:var(--coral);color:var(--coral);transform:translateY(-2px)}
@@ -329,6 +347,7 @@ export default function VaultForm() {
         .countdown.on{display:flex}
         .cd-dot{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
 
+        /* ── VISIBILITY ── */
         .vis-pills{display:flex;flex-direction:column;gap:10px}
         .vis-pill{display:flex;align-items:center;gap:16px;padding:16px;border-radius:20px;background:var(--surf);border:2px solid transparent;cursor:none;transition:all .3s var(--easing)}
         .vis-pill:hover{border-color:var(--coral-l);background:var(--white);box-shadow:0 4px 16px rgba(0,0,0,.03)}
@@ -341,6 +360,7 @@ export default function VaultForm() {
         .vis-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:all .3s var(--easing);flex-shrink:0;background:var(--white)}
         .vis-pill.picked .vis-check{background:var(--coral);border-color:var(--coral)}
 
+        /* ── CAPSULE COSMETICS ── */
         .capsule-colors{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
         .cc-swatch{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:none;transition:all .25s var(--easing);position:relative;}
         .cc-swatch:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,.15)}
@@ -356,6 +376,7 @@ export default function VaultForm() {
         .design-btn.locked::after{content:'🔒';font-size:.7rem;position:absolute;top:6px;right:6px}
         .design-ico{font-size:1.4rem}
 
+        /* ── DROP ZONES ── */
         .drop-zone{border:2px dashed var(--bdr);border-radius:24px;padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--surf);transition:all .3s var(--easing);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;overflow:hidden}
         .drop-zone:hover,.drop-zone.over{border-color:var(--coral);background:var(--coral-l);transform:scale(1.01)}
         .drop-zone.has-cover{padding:0;border-color:transparent}
@@ -370,7 +391,7 @@ export default function VaultForm() {
         .cover-rm:hover{background:var(--coral);transform:scale(1.1);box-shadow:0 4px 12px rgba(255,107,91,.4)}
 
         /* ── RIGHT PANEL (SCROLL & LAYOUT FIXED) ── */
-        .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease; overflow:hidden;}
+        .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;min-height:0;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease; overflow:hidden;}
         .r-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.12) 0%,transparent 60%),radial-gradient(circle at 10% 80%,rgba(255,255,255,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
         
         .rp-inner{
@@ -379,14 +400,12 @@ export default function VaultForm() {
           display:flex;
           flex-direction:column;
           flex:1;
-          min-height:0; /* ITO YUNG NAGPA-SCROLL */
+          min-height:0;
           padding:24px;
           overflow-y:auto;
-          scrollbar-width:thin;
-          scrollbar-color:rgba(255,255,255,.4) transparent;
+          scrollbar-width:none;
         }
-        .rp-inner::-webkit-scrollbar{width:6px}
-        .rp-inner::-webkit-scrollbar-thumb{background:rgba(255,255,255,.4);border-radius:10px}
+        .rp-inner::-webkit-scrollbar{display:none}
 
         .rp-header{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
         .live-dot{width:8px;height:8px;background:#fff;border-radius:50%;animation:pulse 2s infinite}
@@ -404,7 +423,7 @@ export default function VaultForm() {
         .preview-date{font-size:.68rem;color:#fff;font-weight:800}
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
 
-        /* ── STATS BOXES FIX (Ginawang divs para siguradong magpatong) ── */
+        /* ── STATS BOXES FIX ── */
         .rp-stat-row{display:flex;gap:10px;margin-bottom:24px;flex-shrink:0}
         .rp-mini-stat{
           flex:1;
@@ -434,14 +453,14 @@ export default function VaultForm() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
         @media(max-width:1000px){.r-panel{display:none}}
-        @media(max-width:700px){.l-sidebar{display:none}.root{padding:8px;gap:8px}.mc-body{padding:20px}}
+        @media(max-width:700px){.l-sidebar{display:none}.viewport-wrapper{padding:8px;gap:8px}.mc-body{padding:20px}}
       `}</style>
 
       <div id="cur-dot" ref={dotRef}></div>
       <div id="cur-ring" ref={ringRef}></div>
       <div id="autosaveToast" className={toastMsg ? 'on' : ''}>{toastMsg}</div>
 
-      <div className="root">
+      <div className="viewport-wrapper">
         {/* ════ SIDEBAR ════ */}
         <aside className={`l-sidebar ${lsbExp ? 'wide' : ''}`} id="lsb">
           <div className="ls-top">
@@ -656,7 +675,6 @@ export default function VaultForm() {
               </div>
             </div>
 
-            {/* FIX: GINAWANG DIV ANG LAMAN PARA SAPILITANG MAGPATONG */}
             <div className="rp-stat-row">
               <div className="rp-mini-stat">
                 <div className="rp-mini-val">0</div>

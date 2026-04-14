@@ -248,82 +248,110 @@ export default function VaultForm() {
 
   const handleSubmit = async (e, actionType = 'save') => {
     e.preventDefault();
-    if(submitting) return;
+    if (submitting) return;
+    
+    // Safety Check: Siguraduhin nating may user session
+    const uid = localStorage.getItem('user_id');
+    if (!uid) {
+      alert("Error: No user session found. Please login again.");
+      navigate('/login');
+      return;
+    }
+
     setSubmitting(true);
     
     try {
       let finalCoverPath = vault.cover_path;
       if (coverFile) {
         const fileExt = coverFile.name.split('.').pop();
-        const fileName = `${Date.now()}_cover_${user.username.split('@')[0]}.${fileExt}`;
+        const fileName = `${Date.now()}_cover_${uid}.${fileExt}`;
         finalCoverPath = `uploads/${fileName}`;
         const { error: uploadError } = await supabase.storage.from('vault_assets').upload(finalCoverPath, coverFile);
         if (uploadError) throw uploadError;
       }
 
-      // DITO YUNG FIX: Laging isama ang user_id kapag bagong gawa
+      // 1. I-prepare ang data object
       const vaultData = {
-        title: vault.title, 
-        story: vault.story, 
-        mood: vault.mood, 
+        user_id: uid, // Laging ipasa ang UID
+        title: vault.title || 'Untitled Vault',
+        story: vault.story || '',
+        mood: vault.mood || 'Happy',
         unlock_date: vault.unlock_date,
-        visibility: vault.visibility, 
-        capsule_color: vault.capsule_color, 
-        capsule_design: vault.capsule_design,
-        cover_path: finalCoverPath, 
-        target_lat: vault.target_lat, 
-        target_lng: vault.target_lng
+        visibility: vault.visibility || 'private',
+        capsule_color: vault.capsule_color || '#FF6B5B',
+        capsule_design: vault.capsule_design || 'default',
+        cover_path: finalCoverPath,
+        target_lat: vault.target_lat ? parseFloat(vault.target_lat) : null,
+        target_lng: vault.target_lng ? parseFloat(vault.target_lng) : null
       };
 
-      // Kapag walang editId, ibig sabihin NEW vault ito, kaya ipasa ang user.id
-      if (!editId) {
-        vaultData.user_id = user.id;
-      }
-
-      // Alamin ang status
+      // 2. I-set ang status base sa action
       if (actionType === 'seal') {
         vaultData.status = 'sealed';
         vaultData.sealed_at = new Date().toISOString();
-      } else if (mode === 'create' || mode === 'draft') {
+      } else {
         vaultData.status = 'draft';
       }
 
+      console.log("Attempting to save vault with data:", vaultData);
+
       let newVaultId = editId;
+
       if (editId) {
-        const { error: updateError } = await supabase.from('vaults').update(vaultData).eq('id', editId);
+        // UPDATE EXISTING
+        const { error: updateError } = await supabase
+          .from('vaults')
+          .update(vaultData)
+          .eq('id', editId);
         if (updateError) throw updateError;
       } else {
-        const { data, error: insertError } = await supabase.from('vaults').insert([vaultData]).select().single();
-        if (insertError) throw insertError;
-        newVaultId = data.id;
+        // INSERT NEW
+        const { data: insertedData, error: insertError } = await supabase
+          .from('vaults')
+          .insert([vaultData])
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error("Supabase Insert Error Detail:", insertError);
+          throw insertError;
+        }
+        newVaultId = insertedData.id;
       }
 
-      // Upload new files
+      // 3. Handle File Uploads (Optional files)
       if (vaultFiles.length > 0) {
         for (const vf of vaultFiles) {
           const fp = `uploads/${Date.now()}_${vf.name}`;
           await supabase.storage.from('vault_assets').upload(fp, vf.file);
-          await supabase.from('vault_files').insert([{ vault_id: newVaultId, file_name: vf.name, file_path: fp, uploaded_by: user.id }]);
+          await supabase.from('vault_files').insert([{ 
+            vault_id: newVaultId, 
+            file_name: vf.name, 
+            file_path: fp, 
+            uploaded_by: uid 
+          }]);
         }
       }
 
-      // Update Collaborators & Recipients
-      if (is_creator && (actionType === 'save' || actionType === 'seal')) {
-         await supabase.from('vault_collaborators').delete().eq('vault_id', newVaultId);
-         if(collaborators.length > 0) {
-            await supabase.from('vault_collaborators').insert(collaborators.map(c => ({ vault_id: newVaultId, user_id: c.user_id })));
-         }
-         await supabase.from('vault_recipients').delete().eq('vault_id', newVaultId);
-         if(recipients.length > 0) {
-            await supabase.from('vault_recipients').insert(recipients.map(r => ({ vault_id: newVaultId, user_id: r.user_id })));
-         }
+      // 4. Handle Collaborators & Recipients
+      if (is_creator) {
+        await supabase.from('vault_collaborators').delete().eq('vault_id', newVaultId);
+        if (collaborators.length > 0) {
+          await supabase.from('vault_collaborators').insert(collaborators.map(c => ({ vault_id: newVaultId, user_id: c.user_id })));
+        }
+        await supabase.from('vault_recipients').delete().eq('vault_id', newVaultId);
+        if (recipients.length > 0) {
+          await supabase.from('vault_recipients').insert(recipients.map(r => ({ vault_id: newVaultId, user_id: r.user_id })));
+        }
       }
 
       localStorage.removeItem(draftKey);
+      showToast(actionType === 'seal' ? '🔒 Vault Sealed!' : '💾 Draft Saved!');
       navigate('/my-vaults');
+
     } catch (err) {
-      console.error(err);
-      alert("Error saving vault: " + err.message); // Mas malinaw na error alert
+      console.error("Final Catch Error:", err);
+      alert("Error: " + (err.message || "Unknown database error"));
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../config/supabaseClient'; // Real DB Connection
+import { supabase } from '../../config/supabaseClient'; 
 
 // ─── HELPERS ───
 const ai = (n) => (n ? n.substring(0, 2).toUpperCase() : 'U');
@@ -79,7 +79,6 @@ export default function VaultForm() {
   // UI Derived
   const [progress, setProgress] = useState(0);
   const [cd, setCd] = useState(null);
-  const [rpTab, setRpTab] = useState(0); // 0 = Preview, 1 = Stats
 
   const draftKey = `vaultDraft_${editId || 'new'}`;
 
@@ -178,21 +177,19 @@ export default function VaultForm() {
     try {
       let finalCoverPath = vault.cover_path;
 
-      // 1. Upload Cover Photo to Supabase Storage (if selected)
       if (coverFile) {
         const fileExt = coverFile.name.split('.').pop();
         const fileName = `${Date.now()}_cover_${user.username.split('@')[0]}.${fileExt}`;
         const filePath = `uploads/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('vault_assets') // Make sure you create a bucket named 'vault_assets' in Supabase
+          .from('vault_assets')
           .upload(filePath, coverFile);
 
         if (uploadError) throw uploadError;
         finalCoverPath = filePath;
       }
 
-      // 2. Insert Vault into Database
       const { error: insertError } = await supabase
         .from('vaults')
         .insert([{
@@ -205,14 +202,13 @@ export default function VaultForm() {
           capsule_color: vault.capsule_color,
           capsule_design: vault.capsule_design,
           cover_path: finalCoverPath,
-          status: 'draft' // Initial save is draft
+          status: 'draft' 
         }]);
 
       if (insertError) throw insertError;
 
-      // 3. Clear draft and redirect
       localStorage.removeItem(draftKey);
-      navigate('/'); // Redirect to dashboard
+      navigate('/my-vaults'); 
     } catch (err) {
       console.error(err);
       alert("Error saving vault: " + err.message);
@@ -417,6 +413,13 @@ export default function VaultForm() {
         .preview-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.15);padding-top:12px}
         .preview-date{font-size:.68rem;color:#fff;font-weight:800}
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
+        
+        /* THE MISSING STATS ROW CSS FOR ALIGNMENT FIX */
+        .rp-stat-row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.15);border-radius:16px;padding:12px;margin-bottom:16px}
+        .rp-mini-stat{display:flex;flex-direction:column;align-items:center;flex:1;border-right:1px solid rgba(255,255,255,.1)}
+        .rp-mini-stat:last-child{border-right:none}
+        .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:#fff;line-height:1;margin-bottom:2px}
+        .rp-mini-lbl{font-size:.6rem;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em}
 
         .submit-wrap{margin-top:auto;animation:fadeUp .5s .2s var(--easing) both;display:flex;flex-direction:column;gap:10px}
         .btn-seal{width:100%;padding:16px;background:#fff;border:none;border-radius:100px;color:var(--coral);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:900;cursor:none;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);transition:all .3s var(--easing)}
@@ -670,4 +673,4 @@ export default function VaultForm() {
       </div>
     </>
   );
-}   
+}

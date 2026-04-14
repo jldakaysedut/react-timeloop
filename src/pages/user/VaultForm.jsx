@@ -54,10 +54,12 @@ export default function VaultForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('id');
+  const mode = editId ? 'draft' : 'create'; // Basic mode handling
 
   const dotRef = useRef(null);
   const ringRef = useRef(null);
   const coverInputRef = useRef(null);
+  const filesInputRef = useRef(null);
 
   // ─── STATE ───
   const [loading, setLoading] = useState(true);
@@ -73,9 +75,16 @@ export default function VaultForm() {
     target_lat: searchParams.get('lat') || '', target_lng: searchParams.get('lng') || ''
   });
   
+  // Files & Media States
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
-  const [isHoveringCover, setIsHoveringCover] = useState(false);
+  const [vaultFiles, setVaultFiles] = useState([]);
+  
+  // Social States
+  const [collaborators, setCollaborators] = useState([]);
+  const [recipients, setRecipients] = useState([]);
+  const [collabSearch, setCollabSearch] = useState('');
+  const [recipSearch, setRecipSearch] = useState('');
 
   // UI Derived
   const [progress, setProgress] = useState(0);
@@ -124,7 +133,6 @@ export default function VaultForm() {
 
     const tmr = setTimeout(() => {
       localStorage.setItem(draftKey, JSON.stringify(vault));
-      showToast('💾 Draft saved locally');
     }, 1500);
     return () => clearTimeout(tmr);
   }, [vault, coverPreview, loading, draftKey]);
@@ -162,6 +170,22 @@ export default function VaultForm() {
       setCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
     }
+  };
+
+  const handleFilesSelect = (e) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).map(f => ({
+        file: f,
+        preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
+        name: f.name,
+        type: f.type
+      }));
+      setVaultFiles([...vaultFiles, ...newFiles]);
+    }
+  };
+
+  const removeFile = (idx) => {
+    setVaultFiles(vaultFiles.filter((_, i) => i !== idx));
   };
 
   const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 2000); };
@@ -220,6 +244,7 @@ export default function VaultForm() {
 
   return (
     <>
+      {/* 100% EXACT CSS FROM YOUR PHP FILE */}
       <style>{`
         :root{
           --coral:#FF6B5B;--coral-l:#FFE8E4;--coral-d:#E8503F;
@@ -230,24 +255,14 @@ export default function VaultForm() {
         }
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth}
-        body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);cursor:none}
+        body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);display:flex;height:100vh;overflow:hidden;cursor:none}
 
         /* ── CURSOR ── */
         #cur-dot{position:fixed;width:9px;height:9px;background:var(--coral);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s}
         #cur-ring{position:fixed;width:26px;height:26px;border:2px solid var(--coral);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s var(--easing),top .1s var(--easing),width .2s,height .2s,opacity .2s;opacity:.45}
 
-        /* ── BULLETPROOF VIEWPORT WRAPPER (Fixes scroll & cut-off issues) ── */
-        .viewport-wrapper {
-          position: fixed;
-          inset: 0; /* locks to top:0, left:0, right:0, bottom:0 */
-          display: flex;
-          padding: 16px;
-          gap: 12px;
-          background: var(--peach);
-          overflow: hidden;
-          box-sizing: border-box;
-          z-index: 1;
-        }
+        /* ── ROOT (Layout fix for React scrolling) ── */
+        .root{display:flex;height:100vh;width:100%;overflow:hidden;padding:16px;gap:12px}
 
         /* ── SIDEBAR ── */
         .l-sidebar{width:72px;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:0 0 12px;overflow:hidden;flex-shrink:0;transition:width .35s var(--easing),min-width .35s var(--easing)}
@@ -272,10 +287,8 @@ export default function VaultForm() {
         .ls-bottom{padding:.75rem .5rem;border-top:1px solid var(--bdr);flex-shrink:0;width:100%}
         .ls-selfav-wrap{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:14px;text-decoration:none;transition:background .25s var(--easing);overflow:hidden;cursor:none}
         .ls-selfav-wrap:hover{background:var(--coral-l)}
-        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .25s var(--easing)}
+        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden;transition:transform .25s var(--easing)}
         .ls-selfav-wrap:hover .ls-selfav{transform:scale(1.08)}
-        .ls-selfav-inner{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--coral),#FF9A8B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden}
-        .ls-selfav-inner img{width:100%;height:100%;object-fit:cover}
         .ls-selfinfo{overflow:hidden;opacity:0;max-width:0;transition:opacity .2s .05s,max-width .3s var(--easing)}
         .l-sidebar.wide .ls-selfinfo{opacity:1;max-width:130px}
         .ls-selfname{font-size:.76rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
@@ -347,6 +360,13 @@ export default function VaultForm() {
         .countdown.on{display:flex}
         .cd-dot{width:8px;height:8px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
 
+        /* ── LOCATION ── */
+        .loc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;font-size:.85rem}
+        .loc-coords{color:var(--teal);font-weight:800}
+        .loc-none{color:var(--txt3);font-weight:700}
+        .loc-link{font-size:.75rem;font-weight:800;color:var(--coral);text-decoration:none;padding:6px 12px;border-radius:10px;background:var(--coral-l);transition:all .2s;cursor:none}
+        .loc-link:hover{background:var(--coral);color:#fff;transform:translateY(-2px)}
+
         /* ── VISIBILITY ── */
         .vis-pills{display:flex;flex-direction:column;gap:10px}
         .vis-pill{display:flex;align-items:center;gap:16px;padding:16px;border-radius:20px;background:var(--surf);border:2px solid transparent;cursor:none;transition:all .3s var(--easing)}
@@ -362,14 +382,22 @@ export default function VaultForm() {
 
         /* ── CAPSULE COSMETICS ── */
         .capsule-colors{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-        .cc-swatch{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:none;transition:all .25s var(--easing);position:relative;}
+        .cc-swatch{
+          width:36px;height:36px;border-radius:50%;border:3px solid transparent;
+          cursor:none;transition:all .25s var(--easing);position:relative;
+        }
         .cc-swatch:hover{transform:scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,.15)}
         .cc-swatch.picked{border-color:var(--txt);box-shadow:0 0 0 3px rgba(0,0,0,.12)}
         .cc-swatch::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:900;opacity:0;transition:opacity .2s}
         .cc-swatch.picked::after{opacity:1}
 
         .design-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
-        .design-btn{padding:12px 8px;border-radius:16px;background:var(--surf);border:2px solid transparent;cursor:none;transition:all .3s var(--easing);text-align:center;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;color:var(--txt2);display:flex;flex-direction:column;align-items:center;gap:6px;}
+        .design-btn{
+          padding:12px 8px;border-radius:16px;background:var(--surf);
+          border:2px solid transparent;cursor:none;transition:all .3s var(--easing);
+          text-align:center;font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:700;color:var(--txt2);
+          display:flex;flex-direction:column;align-items:center;gap:6px;
+        }
         .design-btn:hover:not(.locked){background:var(--white);border-color:var(--coral-l);color:var(--coral);transform:translateY(-2px)}
         .design-btn.picked{background:var(--coral-l);border-color:var(--coral);color:var(--coral)}
         .design-btn.locked{opacity:.4;cursor:not-allowed;position:relative}
@@ -380,6 +408,7 @@ export default function VaultForm() {
         .drop-zone{border:2px dashed var(--bdr);border-radius:24px;padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--surf);transition:all .3s var(--easing);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;overflow:hidden}
         .drop-zone:hover,.drop-zone.over{border-color:var(--coral);background:var(--coral-l);transform:scale(1.01)}
         .drop-zone.has-cover{padding:0;border-color:transparent}
+        .drop-zone.has-files{padding:20px;justify-content:flex-start}
         .dz-content{position:relative;z-index:5;pointer-events:none}
         .dz-ico{font-size:2rem;margin-bottom:8px;display:block}
         .dz-title{font-size:.9rem;font-weight:800;color:var(--txt);margin-bottom:4px;transition:color .2s}
@@ -390,7 +419,43 @@ export default function VaultForm() {
         .cover-rm{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border:none;color:#fff;font-size:1rem;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:20}
         .cover-rm:hover{background:var(--coral);transform:scale(1.1);box-shadow:0 4px 12px rgba(255,107,91,.4)}
 
-        /* ── RIGHT PANEL (SCROLL & LAYOUT FIXED) ── */
+        /* ── FILE UPLOADS (Step 6) ── */
+        .file-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:12px;margin-top:16px;width:100%;pointer-events:auto;text-align:left}
+        .ft-item{border-radius:14px;overflow:hidden;aspect-ratio:1;position:relative;border:1.5px solid var(--bdr);background:var(--surf);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.02);transition:all .3s}
+        .ft-item:hover{transform:translateY(-3px);box-shadow:0 8px 16px rgba(0,0,0,.06);border-color:rgba(255,107,91,.4)}
+        .ft-item img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:0}
+        .ft-item.file{background:linear-gradient(135deg,var(--surf),var(--white));padding:10px}
+        .ft-ico{font-size:2rem;z-index:1;margin-bottom:4px}
+        .ft-name{font-size:.65rem;color:var(--txt2);text-align:center;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;font-weight:800;z-index:1}
+        .ft-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border:none;color:#fff;font-size:.8rem;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:20;opacity:0;transform:scale(.8)}
+        .ft-item:hover .ft-rm{opacity:1;transform:scale(1)}
+        .ft-rm:hover{background:var(--coral);box-shadow:0 4px 12px rgba(255,107,91,.4)}
+
+        /* ── PEOPLE SEARCH (Collaborators/Recipients) ── */
+        .people-search-wrap{position:relative;margin-bottom:14px}
+        .people-search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--txt3);font-size:.9rem;pointer-events:none}
+        .people-search-input{width:100%;padding:12px 16px 12px 38px;background:var(--surf);border:2px solid transparent;border-radius:100px;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:600;color:var(--txt);outline:none;transition:all .3s var(--easing)}
+        .people-search-input:focus{background:#fff;border-color:var(--coral);box-shadow:0 0 0 4px rgba(255,107,91,.12)}
+        .people-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--bdr);border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.08);z-index:100;overflow:hidden;display:none}
+        .people-dropdown.open{display:block}
+        .pd-item{padding:12px 16px;font-size:.85rem;font-weight:700;color:var(--txt);cursor:none;transition:background .2s;display:flex;align-items:center;gap:10px}
+        .pd-item:hover{background:var(--coral-l);color:var(--coral)}
+        .pd-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--coral),#FF9A8B);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden}
+
+        .people-list{display:flex;flex-direction:column;gap:8px}
+        .person-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;transition:all .25s var(--easing)}
+        .person-row:hover{border-color:var(--coral-l)}
+        .person-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--coral),#FF9A8B);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden}
+        .person-name{font-size:.85rem;font-weight:800;color:var(--txt);flex:1}
+        .person-role{font-size:.65rem;font-weight:800;padding:3px 9px;border-radius:100px}
+        .person-role.collab{background:rgba(91,138,245,.12);color:#3B5FD9}
+        .person-role.recipient{background:var(--teal-l);color:var(--teal)}
+        .person-rm{background:none;border:none;color:var(--txt3);font-size:.8rem;cursor:none;padding:6px;border-radius:8px;transition:all .2s;line-height:1}
+        .person-rm:hover{background:var(--coral-l);color:var(--coral)}
+        .empty-people{text-align:center;padding:20px;color:var(--txt3);font-size:.8rem;font-weight:700}
+        .uac-note{padding:12px 16px;background:rgba(91,138,245,.06);border:1px solid rgba(91,138,245,.15);border-radius:14px;font-size:.75rem;color:#3B5FD9;font-weight:600;display:flex;gap:8px;align-items:flex-start;margin-bottom:16px}
+
+        /* ── RIGHT PANEL (Fixed for Scrolling) ── */
         .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;min-height:0;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease; overflow:hidden;}
         .r-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.12) 0%,transparent 60%),radial-gradient(circle at 10% 80%,rgba(255,255,255,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
         
@@ -423,20 +488,8 @@ export default function VaultForm() {
         .preview-date{font-size:.68rem;color:#fff;font-weight:800}
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
 
-        /* ── STATS BOXES FIX ── */
         .rp-stat-row{display:flex;gap:10px;margin-bottom:24px;flex-shrink:0}
-        .rp-mini-stat{
-          flex:1;
-          background:rgba(255,255,255,.15);
-          border:1px solid rgba(255,255,255,.2);
-          border-radius:14px;
-          padding:12px 8px;
-          text-align:center;
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-          justify-content:center;
-        }
+        .rp-mini-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
         .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;line-height:1;margin-bottom:4px}
         .rp-mini-lbl{font-size:.6rem;font-weight:800;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em}
 
@@ -453,14 +506,14 @@ export default function VaultForm() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.5}}
         @media(max-width:1000px){.r-panel{display:none}}
-        @media(max-width:700px){.l-sidebar{display:none}.viewport-wrapper{padding:8px;gap:8px}.mc-body{padding:20px}}
+        @media(max-width:700px){.l-sidebar{display:none}.root{padding:8px;gap:8px}.mc-body{padding:20px}}
       `}</style>
 
       <div id="cur-dot" ref={dotRef}></div>
       <div id="cur-ring" ref={ringRef}></div>
       <div id="autosaveToast" className={toastMsg ? 'on' : ''}>{toastMsg}</div>
 
-      <div className="viewport-wrapper">
+      <div className="root">
         {/* ════ SIDEBAR ════ */}
         <aside className={`l-sidebar ${lsbExp ? 'wide' : ''}`} id="lsb">
           <div className="ls-top">
@@ -531,7 +584,7 @@ export default function VaultForm() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              {/* STEP 1 */}
+              {/* STEP 1: Basic Info */}
               <div className="v-card">
                 <div className="v-card-header"><div className="v-card-title">📝 Basic Info</div><span className="v-card-step">Step 1</span></div>
                 <div className="fg">
@@ -559,7 +612,7 @@ export default function VaultForm() {
                 </div>
               </div>
 
-              {/* STEP 2 */}
+              {/* STEP 2: Time Lock & Location */}
               <div className="v-card" style={{animationDelay:'.08s'}}>
                 <div className="v-card-header"><div className="v-card-title">⏰ Time Lock</div><span className="v-card-step">Step 2</span></div>
                 <div className="fg">
@@ -577,9 +630,27 @@ export default function VaultForm() {
                     <span>{cd ? (cd.d > 0 ? `Opens in ${cd.d}d ${cd.h}h ${cd.m}m` : `Opens in ${cd.h}h ${cd.m}m`) : 'Opens in...'}</span>
                   </div>
                 </div>
+                
+                {/* 📍 BINABALIK ANG LOCATION DITO */}
+                <div className="fg">
+                  <div className="fg-row"><label className="fg-label">📍 Location</label><span className="fg-hint">optional geo-pin</span></div>
+                  <div className="loc-row">
+                    {vault.target_lat && vault.target_lng ? (
+                      <>
+                        <span className="loc-coords">📍 {Number(vault.target_lat).toFixed(4)}, {Number(vault.target_lng).toFixed(4)}</span>
+                        <Link to="/map" className="loc-link">Change →</Link>
+                      </>
+                    ) : (
+                      <>
+                        <span className="loc-none">No location pinned</span>
+                        <Link to="/map" className="loc-link">Pin on Map →</Link>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* STEP 3 */}
+              {/* STEP 3: Visibility */}
               <div className="v-card" style={{animationDelay:'.12s'}}>
                 <div className="v-card-header"><div className="v-card-title">👁️ Visibility</div><span className="v-card-step">Step 3</span></div>
                 <div className="vis-pills">
@@ -597,7 +668,7 @@ export default function VaultForm() {
                 </div>
               </div>
 
-              {/* STEP 4 */}
+              {/* STEP 4: Capsule Style */}
               <div className="v-card" style={{animationDelay:'.16s'}}>
                 <div className="v-card-header"><div className="v-card-title">🎨 Capsule Style</div><span className="v-card-step">Step 4</span></div>
                 <div className="fg">
@@ -624,7 +695,7 @@ export default function VaultForm() {
                 </div>
               </div>
 
-              {/* STEP 5 */}
+              {/* STEP 5: Cover Photo */}
               <div className="v-card" style={{animationDelay:'.20s'}}>
                 <div className="v-card-header"><div className="v-card-title">🖼️ Cover Photo</div><span className="v-card-step">Step 5</span></div>
                 <div className={`drop-zone ${coverPreview ? 'has-cover' : ''} ${isHoveringCover ? 'over' : ''}`} 
@@ -650,6 +721,73 @@ export default function VaultForm() {
                   )}
                 </div>
               </div>
+
+              {/* 📎 BINALIK ANG FILES UPLOAD (Step 6) */}
+              <div className="v-card" style={{animationDelay:'.24s'}}>
+                <div className="v-card-header"><div className="v-card-title">📎 Files & Media</div><span className="v-card-step">Step 6</span></div>
+                <div style={{background:'var(--surf)',border:'1.5px solid var(--bdr)',padding:'12px 16px',borderRadius:'14px',marginBottom:'20px',fontSize:'.8rem',fontWeight:'700',color:'var(--txt2)',display:'flex',alignItems:'center',gap:'8px'}}>
+                  ℹ️ <span><strong style={{color:'var(--coral)'}}>Plan Limits</strong> — up to <strong style={{color:'var(--coral)'}}>50 MB</strong> total media.</span>
+                </div>
+                <div className={`drop-zone ${vaultFiles.length > 0 ? 'has-files' : ''}`} onClick={() => filesInputRef.current.click()}>
+                  <input type="file" ref={filesInputRef} multiple style={{display:'none'}} onChange={handleFilesSelect} />
+                  <div className="dz-content" style={{ display: vaultFiles.length > 0 ? 'none' : 'block' }}>
+                    <span className="dz-ico">📂</span>
+                    <div className="dz-title">Click or drop files</div>
+                    <div className="dz-sub">Images · Videos · Docs · Audio</div>
+                  </div>
+                  {vaultFiles.length > 0 && (
+                    <div className="file-thumbs" onClick={(e) => e.stopPropagation()}>
+                      {vaultFiles.map((f, idx) => (
+                        <div key={idx} className={`ft-item ${!f.preview ? 'file' : ''}`}>
+                          {f.preview ? <img src={f.preview} alt="" /> : <><span className="ft-ico">📎</span><span className="ft-name">{f.name}</span></>}
+                          <button type="button" className="ft-rm" onClick={() => removeFile(idx)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 🤝 BINALIK ANG COLLABORATORS (Step 7) */}
+              {vault.visibility !== 'private' && (
+                <div className="v-card" style={{animationDelay:'.28s'}}>
+                  <div className="v-card-header"><div className="v-card-title">🤝 Collaborators</div><span className="v-card-step">Step 7</span></div>
+                  <div className="uac-note">🔐 Collaborators can upload files and delete their own uploads only.</div>
+                  <div className="people-search-wrap">
+                    <span className="people-search-ico">🔍</span>
+                    <input className="people-search-input" type="text" placeholder="Search friends to invite…" value={collabSearch} onChange={(e) => setCollabSearch(e.target.value)} />
+                  </div>
+                  <div className="people-list">
+                    {collaborators.length > 0 ? collaborators.map((c, i) => (
+                      <div key={i} className="person-row">
+                        <div className="person-av">{ai(c)}</div><span className="person-name">@{c}</span><span className="person-role collab">Collaborator</span>
+                        <button type="button" className="person-rm" onClick={() => setCollaborators(collaborators.filter(x => x !== c))}>✕</button>
+                      </div>
+                    )) : <div className="empty-people">No collaborators yet.</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* 📬 BINALIK ANG RECIPIENTS (Step 8) */}
+              {vault.visibility !== 'private' && (
+                <div className="v-card" style={{animationDelay:'.32s'}}>
+                  <div className="v-card-header"><div className="v-card-title">📬 Recipients</div><span className="v-card-step">Step 8</span></div>
+                  <div className="uac-note" style={{background:'rgba(29,158,117,.06)',borderColor:'rgba(29,158,117,.18)',color:'var(--teal)'}}>📬 Recipients are notified when sealed and opened.</div>
+                  <div className="people-search-wrap">
+                    <span className="people-search-ico">🔍</span>
+                    <input className="people-search-input" type="text" placeholder="Search friends to add…" value={recipSearch} onChange={(e) => setRecipSearch(e.target.value)} />
+                  </div>
+                  <div className="people-list">
+                    {recipients.length > 0 ? recipients.map((r, i) => (
+                      <div key={i} className="person-row">
+                        <div className="person-av">{ai(r)}</div><span className="person-name">@{r}</span><span className="person-role recipient">Recipient</span>
+                        <button type="button" className="person-rm" onClick={() => setRecipients(recipients.filter(x => x !== r))}>✕</button>
+                      </div>
+                    )) : <div className="empty-people">No recipients yet.</div>}
+                  </div>
+                </div>
+              )}
+
             </form>
           </div>
         </div>
@@ -676,18 +814,9 @@ export default function VaultForm() {
             </div>
 
             <div className="rp-stat-row">
-              <div className="rp-mini-stat">
-                <div className="rp-mini-val">0</div>
-                <div className="rp-mini-lbl">Collabs</div>
-              </div>
-              <div className="rp-mini-stat">
-                <div className="rp-mini-val">0</div>
-                <div className="rp-mini-lbl">Recipients</div>
-              </div>
-              <div className="rp-mini-stat">
-                <div className="rp-mini-val">0</div>
-                <div className="rp-mini-lbl">Files</div>
-              </div>
+              <div className="rp-mini-stat"><div className="rp-mini-val">{collaborators.length}</div><div className="rp-mini-lbl">Collabs</div></div>
+              <div className="rp-mini-stat"><div className="rp-mini-val">{recipients.length}</div><div className="rp-mini-lbl">Recipients</div></div>
+              <div className="rp-mini-stat"><div className="rp-mini-val">{vaultFiles.length}</div><div className="rp-mini-lbl">Files</div></div>
             </div>
 
             <div className="submit-wrap">

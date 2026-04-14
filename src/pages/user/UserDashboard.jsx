@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../config/supabaseClient'; // Real DB Connection
+import { supabase } from '../../config/supabaseClient'; 
 
-// ─── HELPER FUNCTIONS (Exact translations from your PHP) ───
+// ─── HELPER FUNCTIONS ───
 const ai = (n) => (n ? n.substring(0, 2).toUpperCase() : 'U');
 const tg = () => {
   const h = new Date().getHours();
@@ -68,7 +68,6 @@ export default function UserDashboard() {
   const dotRef = useRef(null);
   const ringRef = useRef(null);
 
-  // ─── STATE HOOKS FOR REAL DATA ───
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [myVaults, setMyVaults] = useState([]);
@@ -76,12 +75,10 @@ export default function UserDashboard() {
   const [friends, setFriends] = useState([]);
   const [recentNotifs, setRecentNotifs] = useState([]);
   
-  // Counts
   const [counts, setCounts] = useState({
     vaults: 0, friends: 0, badges: 0, notifs: 0, msgs: 0, likes: 0, comments: 0
   });
 
-  // UI States
   const [lsbExp, setLsbExp] = useState(localStorage.getItem('lsb-exp') === '1');
   const [ndOpen, setNdOpen] = useState(false);
   const [rpTabIdx, setRpTabIdx] = useState(0);
@@ -95,7 +92,6 @@ export default function UserDashboard() {
     localStorage.setItem('lsb-exp', newVal ? '1' : '0');
   };
 
-  // ─── FETCH SUPABASE DATA ───
   useEffect(() => {
     const fetchDashboardData = async () => {
       const uid = localStorage.getItem('user_id');
@@ -105,11 +101,9 @@ export default function UserDashboard() {
       }
 
       try {
-        // 1. Fetch User
         const { data: userData } = await supabase.from('users').select('*').eq('id', uid).single();
         if (userData) setUser(userData);
 
-        // 2. Fetch Vaults
         const { data: vaultsData } = await supabase
           .from('vaults')
           .select('*, vault_files(count)')
@@ -120,7 +114,6 @@ export default function UserDashboard() {
           .limit(6);
         
         if (vaultsData) {
-          // Format the count from the join
           const formattedVaults = vaultsData.map(v => ({
             ...v,
             fc: v.vault_files && v.vault_files[0] ? v.vault_files[0].count : 0
@@ -128,7 +121,6 @@ export default function UserDashboard() {
           setMyVaults(formattedVaults);
         }
 
-        // 3. Fetch Next Vault
         const nowIso = new Date().toISOString();
         const { data: nextVaultData } = await supabase
           .from('vaults')
@@ -143,7 +135,6 @@ export default function UserDashboard() {
         
         if (nextVaultData) setNextVault(nextVaultData);
 
-        // 4. Fetch Friends (Simulating the complex PHP join with two parallel queries)
         const { data: fData1 } = await supabase.from('friendships').select('friend_id').eq('user_id', uid).eq('status', 'accepted');
         const { data: fData2 } = await supabase.from('friendships').select('user_id').eq('friend_id', uid).eq('status', 'accepted');
         
@@ -161,7 +152,6 @@ export default function UserDashboard() {
           if (friendsList) setFriends(friendsList);
         }
 
-        // 5. Fetch Notifications
         const { data: notifData } = await supabase
           .from('notifications')
           .select(`*, actor:users!actor_id(username)`)
@@ -176,7 +166,6 @@ export default function UserDashboard() {
           })));
         }
 
-        // 6. Fetch Counts
         const { count: vCount } = await supabase.from('vaults').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('is_archived', false);
         const { count: bCount } = await supabase.from('achievements').select('*', { count: 'exact', head: true }).eq('user_id', uid);
         const { count: nCount } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('is_read', false);
@@ -204,8 +193,6 @@ export default function UserDashboard() {
     fetchDashboardData();
   }, [navigate]);
 
-
-  // ─── CURSOR & OUTSIDE CLICK EFFECT ───
   useEffect(() => {
     let mx = 0, my = 0, rx = 0, ry = 0;
     let reqId;
@@ -234,7 +221,6 @@ export default function UserDashboard() {
     };
   }, []);
 
-  // ─── COUNTDOWN TIMER EFFECT ───
   useEffect(() => {
     if (!nextVault) return;
     const unlockTime = new Date(nextVault.unlock_date).getTime();
@@ -251,21 +237,18 @@ export default function UserDashboard() {
     return () => clearInterval(timer);
   }, [nextVault]);
 
-  // Handle loading state
   if (loading) {
     return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFF0ED', color: '#FF6B5B', fontFamily: '"Sora", sans-serif', fontSize: '1.5rem', fontWeight: 800 }}>⏳ Loading TimeVaulth...</div>;
   }
 
   if (!user) return null;
 
-  // Derived styling
   const self_brd = border_css[user.equipped_border || 'border-none'] || border_css['border-none'];
   const nv_theme = nextVault ? capsule_theme(nextVault.capsule_color, nextVault.capsule_design) : null;
   const usernameShort = (user.username || '').split('@')[0];
 
   return (
     <>
-      {/* 100% EXACT CSS FROM YOUR dashboard.php */}
       <style>{`
         :root{
           --coral:#FF6B5B; --coral-l:#FFE8E4; --coral-d:#E8503F; --peach:#FFF0ED;
@@ -276,17 +259,11 @@ export default function UserDashboard() {
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
         html,body{height:100%;overflow:hidden}
         body{font-family:'Nunito',sans-serif;background:var(--peach);color:var(--txt);cursor:none}
-
-        /* ── CURSOR ── */
         #cur-dot{position:fixed;width:9px;height:9px;background:var(--coral);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s}
         #cur-ring{position:fixed;width:26px;height:26px;border:2px solid var(--coral);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s var(--easing),top .1s var(--easing),width .2s,height .2s,opacity .2s;opacity:.45}
         body:has(a:hover) #cur-dot,body:has(button:hover) #cur-dot{width:14px;height:14px}
         body:has(a:hover) #cur-ring,body:has(button:hover) #cur-ring{width:32px;height:32px;}
-
-        /* ROOT LAYOUT */
         .root{display:flex;height:100vh;overflow:hidden;padding:16px;gap:12px}
-
-        /* COL 1 — LEFT SIDEBAR */
         .l-sidebar{
           width:72px;min-width:72px;
           display:flex;flex-direction:column;align-items:center;
@@ -329,8 +306,6 @@ export default function UserDashboard() {
         .l-sidebar.wide .ls-selfinfo{opacity:1;max-width:130px}
         .ls-selfname{font-size:.76rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
         .ls-selfrole{font-size:.6rem;color:var(--txt3);display:block;white-space:nowrap}
-
-        /* COL 2 — MAIN WHITE CARD */
         .main-card{
           flex:1;min-width:0;background:var(--white);border-radius:28px;
           box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden;
@@ -377,8 +352,6 @@ export default function UserDashboard() {
         .mc-body{flex:1;overflow-y:auto;padding:20px 24px 24px;scrollbar-width:thin;scrollbar-color:var(--coral-l) transparent}
         .mc-body::-webkit-scrollbar{width:4px}
         .mc-body::-webkit-scrollbar-thumb{background:var(--coral-l);border-radius:10px}
-
-        /* FRIENDS ROW */
         .sec-head{display:flex;align-items:baseline;gap:1rem;margin-bottom:12px}
         .sec-title{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--txt)}
         .sec-tabs{display:flex;gap:0;margin-left:4px}
@@ -399,8 +372,6 @@ export default function UserDashboard() {
         .fr-name{font-size:.67rem;font-weight:700;color:var(--txt2);text-align:center;max-width:62px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .fr-add-av{width:58px;height:58px;border-radius:50%;background:var(--surf);border:2px dashed var(--bdr);display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .3s var(--easing)}
         .fr-item:hover .fr-add-av{background:var(--coral-l);border-color:var(--coral)}
-
-        /* VAULTS GRID */
         .vault-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
         .vc{background:var(--white);border-radius:22px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06);border:1.5px solid var(--bdr);transition:all .3s var(--easing);text-decoration:none;display:block;position:relative;}
         .vc:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(255,107,91,.16);border-color:rgba(255,107,91,.25)}
@@ -422,8 +393,6 @@ export default function UserDashboard() {
         .empty-g h3{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;color:var(--txt2);margin-bottom:.3rem}
         .empty-btn{display:inline-flex;align-items:center;gap:.3rem;margin-top:.8rem;padding:.48rem 1.1rem;background:var(--coral);border-radius:100px;color:#fff;font-size:.76rem;font-weight:800;text-decoration:none;transition:all .3s var(--easing)}
         .empty-btn:hover{background:var(--coral-d);transform:translateY(-2px)}
-
-        /* COL 3 — RIGHT HERO PANEL */
         .r-panel{width:290px;min-width:290px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;}
         .r-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.12) 0%,transparent 60%),radial-gradient(circle at 10% 80%,rgba(255,255,255,.08) 0%,transparent 50%);pointer-events:none;z-index:0;}
         .rp-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
@@ -459,14 +428,12 @@ export default function UserDashboard() {
         .rp-nonext-ico{font-size:3.5rem;margin-bottom:.8rem}
         .rp-nonext-t{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#fff;margin-bottom:.35rem}
         .rp-nonext-s{font-size:.72rem;color:rgba(255,255,255,.7);line-height:1.55;margin-bottom:1rem}
-
         @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
         .l-sidebar{animation:fadeUp .5s var(--easing) both}
         .main-card{animation:fadeUp .5s .08s var(--easing) both}
         .r-panel{animation:fadeUp .5s .16s var(--easing) both}
         .fr-item{animation:fadeUp .4s var(--easing) both}
         .vc{animation:fadeUp .45s var(--easing) both}
-
         @media(max-width:900px){.r-panel{display:none}.root{padding:8px;gap:8px}}
         @media(max-width:600px){.l-sidebar{display:none}}
       `}</style>
@@ -488,33 +455,33 @@ export default function UserDashboard() {
           <nav className="ls-nav">
             <span className="ls-section">Main</span>
             <Link to="/dashboard" className="ls-icon on" data-t="Dashboard">🏠<span className="ls-lbl">Dashboard</span></Link>
-            <Link to="#" className="ls-icon" data-t="My Vaults">🛡️<span className="ls-lbl">My Vaults</span></Link>
-            <Link to="#" className="ls-icon" data-t="Seal Vault">➕<span className="ls-lbl">Seal Vault</span></Link>
-            <Link to="#" className="ls-icon" data-t="Global Feed">🌍<span className="ls-lbl">Global Feed</span></Link>
+            <Link to="/my-vaults" className="ls-icon" data-t="My Vaults">🛡️<span className="ls-lbl">My Vaults</span></Link>
+            <Link to="/seal-vault" className="ls-icon" data-t="Seal Vault">➕<span className="ls-lbl">Seal Vault</span></Link>
+            <Link to="/feed" className="ls-icon" data-t="Global Feed">🌍<span className="ls-lbl">Global Feed</span></Link>
             <div className="ls-div"></div>
             
             <span className="ls-section">Social</span>
-            <Link to="#" className="ls-icon" data-t="Friends">👥<span className="ls-lbl">Friends</span></Link>
-            <Link to="#" className="ls-icon" data-t="Messages">💬<span className="ls-lbl">Messages</span>{counts.msgs > 0 && <span className="ls-ibadge">{counts.msgs}</span>}</Link>
-            <Link to="#" className="ls-icon" data-t="Notifications">🔔<span className="ls-lbl">Notifications</span>{counts.notifs > 0 && <span className="ls-ibadge">{counts.notifs}</span>}</Link>
-            <Link to="#" className="ls-icon" data-t="Group Chat">🫂<span className="ls-lbl">Group Chat</span></Link>
+            <Link to="/friends" className="ls-icon" data-t="Friends">👥<span className="ls-lbl">Friends</span></Link>
+            <Link to="/messages" className="ls-icon" data-t="Messages">💬<span className="ls-lbl">Messages</span>{counts.msgs > 0 && <span className="ls-ibadge">{counts.msgs}</span>}</Link>
+            <Link to="/notifications" className="ls-icon" data-t="Notifications">🔔<span className="ls-lbl">Notifications</span>{counts.notifs > 0 && <span className="ls-ibadge">{counts.notifs}</span>}</Link>
+            <Link to="/group-chat" className="ls-icon" data-t="Group Chat">🫂<span className="ls-lbl">Group Chat</span></Link>
             <div className="ls-div"></div>
             
             <span className="ls-section">Explore</span>
-            <Link to="#" className="ls-icon" data-t="Calendar">📅<span className="ls-lbl">Calendar</span></Link>
-            <Link to="#" className="ls-icon" data-t="Time Map">📍<span className="ls-lbl">Time Map</span></Link>
-            <Link to="#" className="ls-icon" data-t="Achievements">🏆<span className="ls-lbl">Achievements</span></Link>
-            <Link to="#" className="ls-icon" data-t="Leaderboard">📊<span className="ls-lbl">Leaderboard</span></Link>
-            <Link to="#" className="ls-icon" data-t="Archive">📦<span className="ls-lbl">Archive</span></Link>
+            <Link to="/calendar" className="ls-icon" data-t="Calendar">📅<span className="ls-lbl">Calendar</span></Link>
+            <Link to="/map" className="ls-icon" data-t="Time Map">📍<span className="ls-lbl">Time Map</span></Link>
+            <Link to="/achievements" className="ls-icon" data-t="Achievements">🏆<span className="ls-lbl">Achievements</span></Link>
+            <Link to="/leaderboard" className="ls-icon" data-t="Leaderboard">📊<span className="ls-lbl">Leaderboard</span></Link>
+            <Link to="/archive" className="ls-icon" data-t="Archive">📦<span className="ls-lbl">Archive</span></Link>
             <div className="ls-div"></div>
             
             <span className="ls-section">Account</span>
-            <Link to="#" className="ls-icon" data-t="Settings">⚙️<span className="ls-lbl">Settings</span></Link>
+            <Link to="/profile" className="ls-icon" data-t="Settings">⚙️<span className="ls-lbl">Settings</span></Link>
             <Link to="/login" className="ls-icon" data-t="Logout" onClick={() => localStorage.removeItem('user_id')} style={{ color: 'var(--coral)' }}>🚪<span className="ls-lbl" style={{ color: 'var(--coral)' }}>Logout</span></Link>
           </nav>
 
           <div className="ls-bottom">
-            <Link to="#" className="ls-selfav-wrap">
+            <Link to="/profile" className="ls-selfav-wrap">
               <div className="ls-selfav" style={{ background: self_brd, padding: '2.5px' }}>
                 <div className="ls-selfav-inner">
                   {user.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${user.avatar_path}`} alt="" /> : ai(usernameShort)}
@@ -537,7 +504,7 @@ export default function UserDashboard() {
               <input type="text" placeholder="Search vaults, people…" autoComplete="off" />
             </div>
             <div className="mc-spacer"></div>
-            <Link to="#" className="mc-plus" title="New Vault">＋</Link>
+            <Link to="/seal-vault" className="mc-plus" title="New Vault">＋</Link>
 
             <div className="bell-wrap">
               <button className={`mc-bell ${ndOpen ? 'open' : ''}`} onClick={(e) => { e.stopPropagation(); setNdOpen(!ndOpen); }}>
@@ -564,11 +531,11 @@ export default function UserDashboard() {
                     </div>
                   )) : <div className="nd-empty">No notifications yet 🎉</div>}
                 </div>
-                <div className="nd-foot"><Link to="#">View all activity →</Link></div>
+                <div className="nd-foot"><Link to="/notifications">View all activity →</Link></div>
               </div>
             </div>
 
-            <Link to="#" className="mc-user">
+            <Link to="/profile" className="mc-user">
               <div className="mc-uav" style={{ background: self_brd, padding: '2px' }}>
                 <div className="mc-uav-inner">
                   {user.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${user.avatar_path}`} alt="" /> : ai(usernameShort)}
@@ -590,12 +557,12 @@ export default function UserDashboard() {
               
               <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', marginTop: '10px' }}>
                 {[
-                  ['🛡️', counts.vaults, 'Vaults'],
-                  ['👥', counts.friends, 'Friends'],
-                  ['🏆', counts.badges, 'Badges'],
-                  ['⭐', (user.total_points || 0).toLocaleString(), 'Points'],
+                  ['🛡️', counts.vaults, 'Vaults', '/my-vaults'],
+                  ['👥', counts.friends, 'Friends', '/friends'],
+                  ['🏆', counts.badges, 'Badges', '/achievements'],
+                  ['⭐', (user.total_points || 0).toLocaleString(), 'Points', '/leaderboard'],
                 ].map((p, i) => (
-                  <Link key={i} to="#" style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.3rem .78rem', background: 'var(--white)', border: '1.5px solid var(--bdr)', borderRadius: '100px', fontSize: '.72rem', fontWeight: 700, color: 'var(--txt2)', textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.04)', transition: 'all .3s var(--easing)' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--coral)'; e.currentTarget.style.color = 'var(--coral)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--txt2)'; }}>
+                  <Link key={i} to={p[3]} style={{ display: 'inline-flex', alignItems: 'center', gap: '.35rem', padding: '.3rem .78rem', background: 'var(--white)', border: '1.5px solid var(--bdr)', borderRadius: '100px', fontSize: '.72rem', fontWeight: 700, color: 'var(--txt2)', textDecoration: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.04)', transition: 'all .3s var(--easing)' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--coral)'; e.currentTarget.style.color = 'var(--coral)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bdr)'; e.currentTarget.style.color = 'var(--txt2)'; }}>
                     {p[0]} <strong style={{ color: 'var(--txt)' }}>{p[1]}</strong> {p[2]}
                   </Link>
                 ))}
@@ -614,11 +581,11 @@ export default function UserDashboard() {
                 <button className={`stab ${fFilter === 'all' ? 'on' : ''}`} onClick={() => setFFilter('all')}>Recent</button>
                 <button className={`stab ${fFilter === 'streak' ? 'on' : ''}`} onClick={() => setFFilter('streak')}>Most Active</button>
               </div>
-              <Link to="#" className="sec-link">See all →</Link>
+              <Link to="/friends" className="sec-link">See all →</Link>
             </div>
 
             <div className="friends-row" style={{ animation: 'fadeUp .45s .1s var(--easing) both' }}>
-              <Link to="#" className="fr-item">
+              <Link to="/my-vaults" className="fr-item">
                 <div className="fr-av-wrap">
                   <div className="fr-av" style={{ background: self_brd, padding: '2.5px' }}>
                     <div className="fr-av-inner">
@@ -631,7 +598,7 @@ export default function UserDashboard() {
               </Link>
 
               {friends.filter(f => fFilter === 'all' || f.streak_count > 0).map((f, i) => (
-                <Link key={i} to="#" className="fr-item" style={{ animationDelay: `${0.05 * i}s` }}>
+                <Link key={i} to="/friends" className="fr-item" style={{ animationDelay: `${0.05 * i}s` }}>
                   <div className="fr-av-wrap">
                     <div className="fr-av" style={{ background: border_css[f.equipped_border || 'border-none'] || border_css['border-none'], padding: '2.5px' }}>
                       <div className="fr-av-inner">
@@ -645,7 +612,7 @@ export default function UserDashboard() {
               ))}
               
               {friends.length === 0 && (
-                <Link to="#" className="fr-item">
+                <Link to="/friends" className="fr-item">
                   <div className="fr-av-wrap"><div className="fr-add-av">➕</div></div>
                   <span className="fr-name" style={{ color: 'var(--txt3)' }}>Add Friend</span>
                 </Link>
@@ -660,7 +627,7 @@ export default function UserDashboard() {
                 <button className={`stab ${vFilter === 'open' ? 'on' : ''}`} onClick={() => setVFilter('open')}>Open</button>
                 <button className={`stab ${vFilter === 'sealed' ? 'on' : ''}`} onClick={() => setVFilter('sealed')}>Sealed</button>
               </div>
-              <Link to="#" className="sec-link">See all →</Link>
+              <Link to="/my-vaults" className="sec-link">See all →</Link>
             </div>
 
             <div className="vault-grid">
@@ -672,7 +639,7 @@ export default function UserDashboard() {
                   const ctheme = capsule_theme(v.capsule_color, v.capsule_design);
 
                   return (
-                    <Link key={i} to="#" className="vc" style={{ animationDelay: `${0.05 + i * 0.06}s`, borderTop: `3px solid ${ctheme.color}` }}>
+                    <Link key={i} to={`/vault/${v.id}`} className="vc" style={{ animationDelay: `${0.05 + i * 0.06}s`, borderTop: `3px solid ${ctheme.color}` }}>
                       {v.cover_path ? (
                         <img className="vc-cover" src={`https://your-supabase-url/storage/v1/object/public/${v.cover_path}`} alt="" />
                       ) : (
@@ -699,7 +666,7 @@ export default function UserDashboard() {
                   <span>🛡️</span>
                   <h3>No vaults found</h3>
                   <p style={{ fontSize: '.76rem' }}>Adjust your filters or seal a new memory.</p>
-                  <Link to="#" className="empty-btn">➕ Seal First Vault</Link>
+                  <Link to="/seal-vault" className="empty-btn">➕ Seal First Vault</Link>
                 </div>
               )}
             </div>
@@ -747,8 +714,8 @@ export default function UserDashboard() {
                   </div>
 
                   <div className="rp-btns">
-                    <Link to="#" className="rp-btn solid">🔒 View This Vault</Link>
-                    <Link to="#" className="rp-btn ghost">📂 All My Vaults</Link>
+                    <Link to={`/vault/${nextVault.id}`} className="rp-btn solid">🔒 View This Vault</Link>
+                    <Link to="/my-vaults" className="rp-btn ghost">📂 All My Vaults</Link>
                   </div>
                 </div>
 
@@ -766,7 +733,7 @@ export default function UserDashboard() {
                       <span style={{ fontFamily: '"Sora", sans-serif', fontSize: '.95rem', fontWeight: 900, color: '#fff' }}>{s[2]}</span>
                     </div>
                   ))}
-                  <Link to="#" className="rp-btn solid" style={{ marginTop: 'auto' }}>📊 Leaderboard →</Link>
+                  <Link to="/leaderboard" className="rp-btn solid" style={{ marginTop: 'auto' }}>📊 Leaderboard →</Link>
                 </div>
               </>
             ) : (
@@ -774,7 +741,7 @@ export default function UserDashboard() {
                 <div className="rp-nonext-ico">🎉</div>
                 <div className="rp-nonext-t">All vaults are open!</div>
                 <div className="rp-nonext-s">No sealed vaults remaining. Create a new memory to start a countdown.</div>
-                <Link to="#" className="rp-btn solid" style={{ width: '100%' }}>➕ Seal New Vault</Link>
+                <Link to="/seal-vault" className="rp-btn solid" style={{ width: '100%' }}>➕ Seal New Vault</Link>
               </div>
             )}
 

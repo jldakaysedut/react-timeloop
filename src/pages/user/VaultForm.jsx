@@ -266,7 +266,10 @@ export default function VaultForm() {
         .ls-bottom{padding:.75rem .5rem;border-top:1px solid var(--bdr);flex-shrink:0;width:100%}
         .ls-selfav-wrap{display:flex;align-items:center;gap:.6rem;padding:.4rem .5rem;border-radius:14px;text-decoration:none;transition:background .25s var(--easing);overflow:hidden;cursor:none}
         .ls-selfav-wrap:hover{background:var(--coral-l)}
-        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden;transition:transform .25s var(--easing)}
+        .ls-selfav{width:36px;height:36px;min-width:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .25s var(--easing)}
+        .ls-selfav-wrap:hover .ls-selfav{transform:scale(1.08)}
+        .ls-selfav-inner{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--coral),#FF9A8B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.68rem;color:#fff;overflow:hidden}
+        .ls-selfav-inner img{width:100%;height:100%;object-fit:cover}
         .ls-selfinfo{overflow:hidden;opacity:0;max-width:0;transition:opacity .2s .05s,max-width .3s var(--easing)}
         .l-sidebar.wide .ls-selfinfo{opacity:1;max-width:130px}
         .ls-selfname{font-size:.76rem;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
@@ -414,12 +417,11 @@ export default function VaultForm() {
         .preview-date{font-size:.68rem;color:#fff;font-weight:800}
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
         
-        /* THE MISSING STATS ROW CSS FOR ALIGNMENT FIX */
-        .rp-stat-row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.15);border-radius:16px;padding:12px;margin-bottom:16px}
-        .rp-mini-stat{display:flex;flex-direction:column;align-items:center;flex:1;border-right:1px solid rgba(255,255,255,.1)}
-        .rp-mini-stat:last-child{border-right:none}
-        .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:#fff;line-height:1;margin-bottom:2px}
-        .rp-mini-lbl{font-size:.6rem;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.05em}
+        /* THE FIXED STATS ROW CSS FROM YOUR PHP FILE */
+        .rp-stat-row{display:flex;gap:10px;margin-bottom:16px}
+        .rp-mini-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 12px;text-align:center}
+        .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#fff;display:block}
+        .rp-mini-lbl{font-size:.58rem;font-weight:800;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.08em;display:block;margin-top:2px}
 
         .submit-wrap{margin-top:auto;animation:fadeUp .5s .2s var(--easing) both;display:flex;flex-direction:column;gap:10px}
         .btn-seal{width:100%;padding:16px;background:#fff;border:none;border-radius:100px;color:var(--coral);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:900;cursor:none;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);transition:all .3s var(--easing)}

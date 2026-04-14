@@ -103,12 +103,12 @@ export default function Login() {
 
     // Route based on role
     if (user.role === 'admin') {
-      navigate('/admin/dashboard');
-    } else if (user.role === 'moderator') {
-      navigate('/moderator/dashboard');
-    } else {
-      navigate('/'); // Routes to UserDashboard based on your App.jsx
-    }
+        navigate('/admin/dashboard');
+      } else if (user.role === 'moderator') {
+        navigate('/moderator/dashboard');
+      } else {
+        navigate('/dashboard'); // <--- GINAWANG /dashboard
+      }
   };
 
   return (

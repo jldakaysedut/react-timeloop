@@ -1,27 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../config/supabaseClient'; 
+import { supabase } from '../../config/supabaseClient';
 
-// ─── HELPERS ───
+// ─── EXACT PHP HELPERS & ARRAYS ───
 const ai = (n) => (n ? n.substring(0, 2).toUpperCase() : 'U');
-const moodIco = { Happy: '😊', Sad: '😢', Excited: '🎉', Nostalgic: '🥹', Hopeful: '✨', Angry: '😤' };
-const moodTips = {
-  Happy: '😊 Capture what made today special.', Sad: '😢 Even hard moments deserve remembering.',
-  Excited: '🎉 Channel that energy!', Nostalgic: '🥹 Future you will thank you.',
-  Hopeful: '✨ Write your hopes for the future.', Angry: '😤 Sometimes we need to vent.'
-};
-const capsuleColors = ['#FF6B5B','#F5A623','#1D9E75','#5B8AF5','#9B59B6','#E91E8C','#00BCD4','#FF5722','#607D8B','#222222'];
-const allDesigns = [
-  { id: 'default', label: 'Classic', ico: '🛡️', tiers: ['standard', 'pro', 'ultra'] },
-  { id: 'classic', label: 'Vintage', ico: '📜', tiers: ['pro', 'ultra'] },
-  { id: 'pastel', label: 'Pastel', ico: '🌸', tiers: ['pro', 'ultra'] },
-  { id: 'midnight', label: 'Midnight', ico: '🌙', tiers: ['pro', 'ultra'] },
-  { id: 'aurora', label: 'Aurora', ico: '🌌', tiers: ['ultra'] },
-  { id: 'obsidian', label: 'Obsidian', ico: '🖤', tiers: ['ultra'] },
-  { id: 'sakura', label: 'Sakura', ico: '🌺', tiers: ['ultra'] },
-];
 
-const borderCss = {
+const BORDER_CSS = {
   'border-none': 'linear-gradient(135deg,#FF6B5B,#FF9A8B)',
   'border-gold': 'linear-gradient(135deg,#FFD700,#FFA500)',
   'border-teal': 'linear-gradient(135deg,#00E5B0,#00B4D8)',
@@ -31,30 +15,47 @@ const borderCss = {
   'border-fire': 'linear-gradient(135deg,#FF4500,#FF8C00,#FFD700)'
 };
 
-const getCapsuleGradient = (color = '#FF6B5B', design = 'default') => {
+const all_designs = {
+  'default': { label: 'Classic', ico: '🛡️', tiers: ['standard', 'pro', 'ultra'] },
+  'classic': { label: 'Vintage', ico: '📜', tiers: ['pro', 'ultra'] },
+  'pastel': { label: 'Pastel', ico: '🌸', tiers: ['pro', 'ultra'] },
+  'midnight': { label: 'Midnight', ico: '🌙', tiers: ['pro', 'ultra'] },
+  'aurora': { label: 'Aurora', ico: '🌌', tiers: ['ultra'] },
+  'obsidian': { label: 'Obsidian', ico: '🖤', tiers: ['ultra'] },
+  'sakura': { label: 'Sakura', ico: '🌺', tiers: ['ultra'] }
+};
+
+const capsuleColors = ['#FF6B5B','#F5A623','#1D9E75','#5B8AF5','#9B59B6','#E91E8C','#00BCD4','#FF5722','#607D8B','#222222'];
+const moodIco = { Happy: '😊', Sad: '😢', Excited: '🎉', Nostalgic: '🥹', Hopeful: '✨', Angry: '😤' };
+const moodTips = {
+  Happy: '😊 Capture what made today special.', Sad: '😢 Even hard moments deserve remembering.',
+  Excited: '🎉 Channel that energy!', Nostalgic: '🥹 Future you will thank you.',
+  Hopeful: '✨ Write your hopes for the future.', Angry: '😤 Sometimes we need to vent.'
+};
+const EXT_ICONS = { PDF: '📄', MP4: '🎬', MOV: '🎬', MP3: '🎵', WAV: '🎵', TXT: '📝', DOC: '📝', DOCX: '📝' };
+
+function capsuleGradient(color = '#FF6B5B', design = 'default') {
   const hex = (color || '#FF6B5B').replace('#', '');
   const r = parseInt(hex.substring(0, 2), 16) || 255;
   const g = parseInt(hex.substring(2, 4), 16) || 107;
   const b = parseInt(hex.substring(4, 6), 16) || 91;
   const dr = '#' + [r, g, b].map(c => Math.max(0, Math.floor(c * 0.6)).toString(16).padStart(2, '0')).join('');
-  
   const grads = {
-    default: `linear-gradient(135deg, ${color} 0%, ${dr} 100%)`,
-    classic: `linear-gradient(145deg, #f5e6c8 0%, ${color}88 60%, ${dr}cc 100%)`,
-    pastel: `linear-gradient(135deg, ${color}66 0%, #fff4f4 60%, ${color}44 100%)`,
-    midnight: `linear-gradient(145deg, #0f0f1a 0%, ${color}99 50%, #1a1a2e 100%)`,
-    aurora: `linear-gradient(135deg, ${color} 0%, #7c3aedaa 50%, ${dr} 100%)`,
-    obsidian: `linear-gradient(145deg, #111111 0%, ${color}77 60%, #1a1a1a 100%)`,
-    sakura: `linear-gradient(135deg, ${color}88 0%, #fce4ec 50%, ${color}55 100%)`,
+    default: `linear-gradient(135deg, #${hex} 0%, ${dr} 100%)`,
+    classic: `linear-gradient(145deg, #f5e6c8 0%, #${hex}88 60%, ${dr}cc 100%)`,
+    pastel: `linear-gradient(135deg, #${hex}66 0%, #fff4f4 60%, #${hex}44 100%)`,
+    midnight: `linear-gradient(145deg, #0f0f1a 0%, #${hex}99 50%, #1a1a2e 100%)`,
+    aurora: `linear-gradient(135deg, #${hex} 0%, #7c3aedaa 50%, ${dr} 100%)`,
+    obsidian: `linear-gradient(145deg, #111111 0%, #${hex}77 60%, #1a1a1a 100%)`,
+    sakura: `linear-gradient(135deg, #${hex}88 0%, #fce4ec 50%, #${hex}55 100%)`,
   };
   return grads[design] || grads.default;
-};
+}
 
 export default function VaultForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('id');
-  const mode = editId ? 'draft' : 'create'; // Basic mode handling
 
   const dotRef = useRef(null);
   const ringRef = useRef(null);
@@ -66,88 +67,136 @@ export default function VaultForm() {
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState(null);
   const [lsbExp, setLsbExp] = useState(localStorage.getItem('lsb-exp') === '1');
-  const [toastMsg, setToastMsg] = useState('');
+  const [toastMsg, setToastMsg] = useState(null);
+  
+  const [mode, setMode] = useState(editId ? 'draft' : 'create');
+  const [vaultCount, setVaultCount] = useState(0);
   
   // Form Data
   const [vault, setVault] = useState({
-    title: '', story: '', mood: 'Happy', unlock_date: '', visibility: 'private',
-    capsule_color: '#FF6B5B', capsule_design: 'default',
-    target_lat: searchParams.get('lat') || '', target_lng: searchParams.get('lng') || ''
+    id: 0, title: '', story: '', mood: 'Happy', unlock_date: '', visibility: 'private',
+    capsule_color: '#FF6B5B', capsule_design: 'default', target_lat: searchParams.get('lat') || '', target_lng: searchParams.get('lng') || '',
+    cover_path: '', status: '', sealed_at: null
   });
   
-  // Files & Media States
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [vaultFiles, setVaultFiles] = useState([]);
+  const [existingFiles, setExistingFiles] = useState([]);
   
-  // Social States
   const [collaborators, setCollaborators] = useState([]);
   const [recipients, setRecipients] = useState([]);
   const [collabSearch, setCollabSearch] = useState('');
   const [recipSearch, setRecipSearch] = useState('');
+  const [collabResults, setCollabResults] = useState([]);
+  const [recipResults, setRecipResults] = useState([]);
 
-  // UI Derived
   const [progress, setProgress] = useState(0);
   const [cd, setCd] = useState(null);
+  const [graceLeft, setGraceLeft] = useState('');
 
   const draftKey = `vaultDraft_${editId || 'new'}`;
 
-  // ─── EFFECTS ───
+  const showToast = (msg, type = 'teal') => {
+    setToastMsg([msg, type]);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  // ─── DATA FETCHING ───
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       const uid = localStorage.getItem('user_id');
       if (!uid) { navigate('/login'); return; }
       
-      const { data } = await supabase.from('users').select('*').eq('id', uid).single();
-      if (data) setUser(data);
-      
-      if (!editId) {
-        const saved = localStorage.getItem(draftKey);
-        if (saved) {
-          try { setVault(JSON.parse(saved)); } catch(e){}
-        }
-      }
-      setLoading(false);
-    };
-    fetchUser();
-  }, [editId, navigate, draftKey]);
+      try {
+        const { data: uData } = await supabase.from('users').select('*').eq('id', uid).single();
+        setUser(uData);
 
+        const { count } = await supabase.from('vaults').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('is_archived', false);
+        setVaultCount(count || 0);
+
+        if (editId) {
+          const { data: vData } = await supabase.from('vaults').select('*').eq('id', editId).single();
+          if (vData) {
+            setVault(v => ({ ...v, ...vData, target_lat: searchParams.get('lat') || vData.target_lat, target_lng: searchParams.get('lng') || vData.target_lng }));
+            
+            const isCreator = vData.user_id === uid;
+            const vaultOpen = new Date(vData.unlock_date).getTime() <= Date.now();
+            const inGrace = vData.status === 'sealed' && vData.sealed_at && (Date.now() <= new Date(vData.sealed_at).getTime() + (24 * 3600000));
+
+            if (vaultOpen || vData.status === 'opened') { navigate(`/vault/${editId}`); return; }
+            else if (vData.status === 'draft') setMode(isCreator ? 'draft' : 'collaborator');
+            else if (vData.status === 'sealed') {
+              if (isCreator && inGrace) setMode('grace');
+              else { navigate('/my-vaults?tab=sealed'); return; }
+            }
+
+            // Fetch existing files
+            const { data: fData } = await supabase.from('vault_files').select('*, users(username)').eq('vault_id', editId);
+            if (fData) setExistingFiles(fData.map(f => ({ ...f, uploader_name: f.users?.username })));
+
+            // Fetch collaborators/recipients
+            if (isCreator) {
+              const { data: cData } = await supabase.from('vault_collaborators').select('*, users(username, avatar_path)').eq('vault_id', editId);
+              if (cData) setCollaborators(cData.map(c => ({ user_id: c.user_id, username: c.users.username, avatar_path: c.users.avatar_path })));
+              
+              const { data: rData } = await supabase.from('vault_recipients').select('*, users(username, avatar_path)').eq('vault_id', editId);
+              if (rData) setRecipients(rData.map(r => ({ user_id: r.user_id, username: r.users.username, avatar_path: r.users.avatar_path })));
+            }
+          }
+        } else {
+          // Load local draft
+          const saved = localStorage.getItem(draftKey);
+          if (saved) { try { setVault(v => ({...v, ...JSON.parse(saved)})); } catch(e){} }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [editId, navigate, draftKey, searchParams]);
+
+  // ─── CURSOR & AUTOSAVE ───
   useEffect(() => {
+    if (loading) return;
     let mx = 0, my = 0, rx = 0, ry = 0, reqId;
     const handleMouseMove = (e) => { mx = e.clientX; my = e.clientY; if(dotRef.current){dotRef.current.style.left=mx+'px';dotRef.current.style.top=my+'px'} };
     const animateCursor = () => { rx += (mx - rx) * 0.13; ry += (my - ry) * 0.13; if(ringRef.current){ringRef.current.style.left=rx+'px';ringRef.current.style.top=ry+'px'} reqId=requestAnimationFrame(animateCursor); };
     window.addEventListener('mousemove', handleMouseMove); animateCursor();
     return () => { window.removeEventListener('mousemove', handleMouseMove); cancelAnimationFrame(reqId); };
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     if (loading) return;
-    const checks = [
-      vault.title.trim().length > 0,
-      vault.story.trim().length > 0,
-      vault.unlock_date !== '',
-      coverPreview !== null,
-      (vault.target_lat !== '' && vault.target_lng !== '')
-    ];
+    const checks = [ (vault.title || '').trim().length > 0, (vault.story || '').trim().length > 0, vault.unlock_date !== '', coverPreview || vault.cover_path, (vault.target_lat && vault.target_lng) ];
     setProgress(Math.round((checks.filter(Boolean).length / checks.length) * 100));
 
-    const tmr = setTimeout(() => {
-      localStorage.setItem(draftKey, JSON.stringify(vault));
-    }, 1500);
+    const tmr = setTimeout(() => { localStorage.setItem(draftKey, JSON.stringify(vault)); }, 1500);
     return () => clearTimeout(tmr);
   }, [vault, coverPreview, loading, draftKey]);
 
+  // ─── TIMERS ───
   useEffect(() => {
-    if (!vault.unlock_date) { setCd(null); return; }
-    const unlockTime = new Date(vault.unlock_date).getTime();
     const tick = () => {
-      const diff = Math.max(0, Math.floor((unlockTime - Date.now()) / 1000));
-      if (diff <= 0) { setCd(null); return; }
-      setCd({ d: Math.floor(diff/86400), h: Math.floor((diff%86400)/3600), m: Math.floor((diff%3600)/60), s: diff%60 });
+      if (vault.unlock_date) {
+        const diff = Math.max(0, Math.floor((new Date(vault.unlock_date).getTime() - Date.now()) / 1000));
+        setCd(diff > 0 ? { d: Math.floor(diff/86400), h: Math.floor((diff%86400)/3600), m: Math.floor((diff%3600)/60), s: diff%60 } : null);
+      }
+      if (mode === 'grace' && vault.sealed_at) {
+        const dl = new Date(vault.sealed_at).getTime() + (24*3600000);
+        const left = Math.floor((dl - Date.now())/1000);
+        if (left > 0) {
+          setGraceLeft(left > 3600 ? `${Math.floor(left/3600)}h ${Math.floor((left%3600)/60)}m left` : `${Math.floor(left/60)}m left`);
+        } else {
+          setGraceLeft('Expired');
+        }
+      }
     };
     tick(); const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [vault.unlock_date]);
+  }, [vault.unlock_date, vault.sealed_at, mode]);
 
   // ─── HANDLERS ───
   const handleChange = (e) => setVault({ ...vault, [e.target.name]: e.target.value });
@@ -166,86 +215,141 @@ export default function VaultForm() {
 
   const handleCoverSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setCoverFile(file);
-      setCoverPreview(URL.createObjectURL(file));
+      setCoverFile(e.target.files[0]);
+      setCoverPreview(URL.createObjectURL(e.target.files[0]));
+      setVault({...vault, cover_path: ''}); // clear existing visual path
     }
   };
 
   const handleFilesSelect = (e) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map(f => ({
-        file: f,
-        preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null,
-        name: f.name,
-        type: f.type
-      }));
+      const newFiles = Array.from(e.target.files).map(f => ({ file: f, preview: f.type.startsWith('image/') ? URL.createObjectURL(f) : null, name: f.name, type: f.type }));
       setVaultFiles([...vaultFiles, ...newFiles]);
     }
   };
 
-  const removeFile = (idx) => {
-    setVaultFiles(vaultFiles.filter((_, i) => i !== idx));
+  const removeFile = (idx) => setVaultFiles(vaultFiles.filter((_, i) => i !== idx));
+
+  const removeExistingFile = async (fileId) => {
+    if(!window.confirm('Remove this file?')) return;
+    try {
+      await supabase.from('vault_files').delete().eq('id', fileId);
+      setExistingFiles(existingFiles.filter(f => f.id !== fileId));
+      showToast('🗑️ File removed.', 'pink');
+    } catch(e) { console.error(e); }
   };
 
-  const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 2000); };
+  const searchFriends = async (query, type) => {
+    if (!query) { type === 'collab' ? setCollabResults([]) : setRecipResults([]); return; }
+    // Fetch from Supabase (mocking the friendship logic for UI)
+    const { data } = await supabase.from('users').select('id, username, avatar_path').ilike('username', `%${query}%`).neq('id', user.id).limit(5);
+    type === 'collab' ? setCollabResults(data || []) : setRecipResults(data || []);
+  };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, actionType = 'save') => {
     e.preventDefault();
+    if(submitting) return;
     setSubmitting(true);
-
+    
     try {
       let finalCoverPath = vault.cover_path;
-
       if (coverFile) {
         const fileExt = coverFile.name.split('.').pop();
         const fileName = `${Date.now()}_cover_${user.username.split('@')[0]}.${fileExt}`;
-        const filePath = `uploads/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('vault_assets')
-          .upload(filePath, coverFile);
-
-        if (uploadError) throw uploadError;
-        finalCoverPath = filePath;
+        finalCoverPath = `uploads/${fileName}`;
+        await supabase.storage.from('vault_assets').upload(finalCoverPath, coverFile);
       }
 
-      const { error: insertError } = await supabase
-        .from('vaults')
-        .insert([{
-          user_id: user.id,
-          title: vault.title,
-          story: vault.story,
-          mood: vault.mood,
-          unlock_date: vault.unlock_date,
-          visibility: vault.visibility,
-          capsule_color: vault.capsule_color,
-          capsule_design: vault.capsule_design,
-          cover_path: finalCoverPath,
-          status: 'draft' 
-        }]);
+      const vaultData = {
+        title: vault.title, story: vault.story, mood: vault.mood, unlock_date: vault.unlock_date,
+        visibility: vault.visibility, capsule_color: vault.capsule_color, capsule_design: vault.capsule_design,
+        cover_path: finalCoverPath, target_lat: vault.target_lat, target_lng: vault.target_lng
+      };
 
-      if (insertError) throw insertError;
+      if (actionType === 'seal') {
+        vaultData.status = 'sealed';
+        vaultData.sealed_at = new Date().toISOString();
+      } else if (mode === 'create') {
+        vaultData.status = 'draft';
+        vaultData.user_id = user.id;
+      }
+
+      let newVaultId = editId;
+      if (editId) {
+        await supabase.from('vaults').update(vaultData).eq('id', editId);
+      } else {
+        const { data, error } = await supabase.from('vaults').insert([vaultData]).select().single();
+        if(error) throw error;
+        newVaultId = data.id;
+      }
+
+      // Upload new files
+      if (vaultFiles.length > 0) {
+        for (const vf of vaultFiles) {
+          const fp = `uploads/${Date.now()}_${vf.name}`;
+          await supabase.storage.from('vault_assets').upload(fp, vf.file);
+          await supabase.from('vault_files').insert([{ vault_id: newVaultId, file_name: vf.name, file_path: fp, uploaded_by: user.id }]);
+        }
+      }
+
+      // Update Collaborators & Recipients
+      if (is_creator && (actionType === 'save' || actionType === 'seal')) {
+         await supabase.from('vault_collaborators').delete().eq('vault_id', newVaultId);
+         if(collaborators.length > 0) {
+            await supabase.from('vault_collaborators').insert(collaborators.map(c => ({ vault_id: newVaultId, user_id: c.user_id })));
+         }
+         await supabase.from('vault_recipients').delete().eq('vault_id', newVaultId);
+         if(recipients.length > 0) {
+            await supabase.from('vault_recipients').insert(recipients.map(r => ({ vault_id: newVaultId, user_id: r.user_id })));
+         }
+      }
 
       localStorage.removeItem(draftKey);
-      navigate('/my-vaults'); 
+      navigate('/my-vaults');
     } catch (err) {
       console.error(err);
-      alert("Error saving vault: " + err.message);
+      alert("Error saving vault.");
       setSubmitting(false);
     }
   };
 
-  if (loading) return null;
+  // ─── LOADING SCREEN (PREVENTS WHITE SCREEN) ───
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FFF0ED', color: '#FF6B5B', fontFamily: '"Sora", sans-serif' }}>
+        <style>{`@keyframes pulseLoad { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }`}</style>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'pulseLoad 1.5s ease-in-out infinite' }}>⏳</div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Preparing Vault Editor...</h2>
+      </div>
+    );
+  }
 
-  const myBrd = borderCss[user?.equipped_border] || borderCss['border-none'];
+  // ─── RENDER VARS ───
+  const myBrd = BORDER_CSS[user?.equipped_border] || BORDER_CSS['border-none'];
   const usernameShort = user?.username ? user.username.split('@')[0] : 'User';
-  const rPanelGrad = getCapsuleGradient(vault.capsule_color, vault.capsule_design);
+  const tier = user?.subscription_tier || 'standard';
+  
+  const vault_limit = tier === 'ultra' ? 999999 : (tier === 'pro' ? 50 : 10);
+  const pip_max = Math.min(vault_limit === 999999 ? 10 : vault_limit, 10);
+  const pip_used = vault_limit === 999999 ? 0 : Math.min(vaultCount, pip_max);
+  const bar_cls = vaultCount >= vault_limit ? 'full' : (vaultCount / Math.max(vault_limit, 1) >= .75 ? 'warn' : '');
+
+  const phase_label = mode === 'create' ? ['✨ New Draft', 'Creating a new vault draft'] : 
+                      mode === 'draft' ? ['✏️ Edit Draft', 'Draft — not sealed yet'] : 
+                      mode === 'grace' ? ['⏳ Grace Period Edit', '24hr edit window — seals soon'] : 
+                      ['🤝 Collaborator View', 'You were invited to upload files'];
+
+  const is_creator = mode !== 'collaborator';
+  const is_draft_mode = ['draft', 'collaborator'].includes(mode);
+  const rPanelGrad = capsuleGradient(vault.capsule_color, vault.capsule_design);
 
   return (
     <>
-      {/* 100% EXACT CSS FROM YOUR PHP FILE */}
+      {/* 100% EXACT CSS FROM YOUR ORIGINAL PHP */}
       <style>{`
+        /* REACT VITE FIX: Ensures .root works exactly as it did in PHP */
+        #root { display: contents; }
+
         :root{
           --coral:#FF6B5B;--coral-l:#FFE8E4;--coral-d:#E8503F;
           --peach:#FFF0ED;--white:#FFFFFF;--card:#FFFFFF;--surf:#F8F8F8;
@@ -261,8 +365,8 @@ export default function VaultForm() {
         #cur-dot{position:fixed;width:9px;height:9px;background:var(--coral);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s}
         #cur-ring{position:fixed;width:26px;height:26px;border:2px solid var(--coral);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s var(--easing),top .1s var(--easing),width .2s,height .2s,opacity .2s;opacity:.45}
 
-        /* ── ROOT (Layout fix for React scrolling) ── */
-        .root{display:flex;height:100vh;width:100%;overflow:hidden;padding:16px;gap:12px}
+        /* ── ROOT ── */
+        .root{display:flex;width:100%;height:100vh;overflow:hidden;padding:16px;gap:12px;box-sizing:border-box}
 
         /* ── SIDEBAR ── */
         .l-sidebar{width:72px;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:0 0 12px;overflow:hidden;flex-shrink:0;transition:width .35s var(--easing),min-width .35s var(--easing)}
@@ -295,7 +399,7 @@ export default function VaultForm() {
         .ls-selfrole{font-size:.6rem;color:var(--txt3);display:block;white-space:nowrap}
 
         /* ── MAIN CARD ── */
-        .main-card{flex:1;min-width:0;min-height:0;background:var(--white);border-radius:28px;box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden}
+        .main-card{flex:1;min-width:0;background:var(--white);border-radius:28px;box-shadow:0 12px 48px rgba(255,107,91,.08);display:flex;flex-direction:column;overflow:hidden}
         .mc-top{display:flex;align-items:center;gap:12px;padding:18px 24px 14px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,.04)}
         .mc-title{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--txt);white-space:nowrap}
         .mc-spacer{flex:1}
@@ -311,15 +415,35 @@ export default function VaultForm() {
         .mc-body::-webkit-scrollbar{width:5px}
         .mc-body::-webkit-scrollbar-thumb{background:var(--coral-l);border-radius:10px}
 
+        /* ── PHASE BANNER ── */
+        .phase-banner{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:18px;margin-bottom:20px;animation:fadeUp .4s var(--easing) both;}
+        .phase-banner.draft{background:rgba(29,158,117,.08);border:1.5px solid rgba(29,158,117,.2)}
+        .phase-banner.grace{background:rgba(245,166,35,.1);border:1.5px solid rgba(245,166,35,.3)}
+        .phase-banner.collaborator{background:rgba(91,138,245,.08);border:1.5px solid rgba(91,138,245,.2)}
+        .phase-ico{font-size:1.4rem;flex-shrink:0}
+        .phase-info{flex:1}
+        .phase-name{font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--txt)}
+        .phase-sub{font-size:.72rem;color:var(--txt2);font-weight:600;margin-top:2px}
+        .phase-tag{font-size:.65rem;font-weight:800;padding:4px 10px;border-radius:100px;white-space:nowrap}
+        .phase-tag.draft{background:var(--teal-l);color:var(--teal)}
+        .phase-tag.grace{background:rgba(245,166,35,.15);color:#9A6900}
+        .phase-tag.collaborator{background:rgba(91,138,245,.12);color:#3B5FD9}
+
         /* ── PROGRESS STRIP ── */
         .progress-strip{display:flex;align-items:center;gap:1rem;padding:16px 20px;background:var(--surf);border-radius:20px;margin-bottom:24px;border:1.5px solid var(--bdr)}
         .ps-label{font-size:.75rem;font-weight:800;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
         .ps-track{flex:1;height:6px;background:rgba(0,0,0,.05);border-radius:100px;overflow:hidden}
         .ps-fill{height:100%;background:var(--coral);border-radius:100px;width:0%;transition:width .45s var(--easing)}
         .ps-pct{font-size:.8rem;font-weight:800;color:var(--coral);min-width:36px;text-align:right}
-        .ps-dots{display:flex;align-items:center;gap:6px}
+        .ps-dots{display:flex;gap:6px}
         .ps-dot{width:10px;height:10px;border-radius:50%;background:var(--bdr);transition:all .3s var(--easing)}
         .ps-dot.on{background:var(--coral);box-shadow:0 0 0 3px var(--coral-l)}
+
+        /* ── ALERTS ── */
+        .alert{display:flex;align-items:center;gap:.55rem;padding:1rem 1.2rem;border-radius:16px;font-size:.85rem;font-weight:700;margin-bottom:1.5rem}
+        .alert-red{background:var(--coral-l);border:1px solid rgba(255,107,91,.2);color:var(--coral-d)}
+        .alert-teal{background:var(--teal-l);border:1px solid rgba(29,158,117,.2);color:var(--teal)}
+        .alert-gold{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);color:#B87900}
 
         /* ── FORM CARDS ── */
         .v-card{background:var(--white);border:1.5px solid var(--bdr);border-radius:24px;padding:24px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,0,0,.02);transition:all .3s var(--easing);animation:fadeUp .45s var(--easing) both}
@@ -380,6 +504,14 @@ export default function VaultForm() {
         .vis-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:all .3s var(--easing);flex-shrink:0;background:var(--white)}
         .vis-pill.picked .vis-check{background:var(--coral);border-color:var(--coral)}
 
+        /* ── SLOT BAR ── */
+        .slot-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;font-size:.8rem;font-weight:700;color:var(--txt2)}
+        .slot-bar.warn{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3);color:#A06A00}
+        .slot-bar.full{background:var(--coral-l);border-color:rgba(255,107,91,.3);color:var(--coral-d)}
+        .slot-pips{display:flex;gap:4px}
+        .slot-pip{width:10px;height:8px;border-radius:3px;background:var(--coral)}
+        .slot-pip.empty{background:var(--bdr)}
+
         /* ── CAPSULE COSMETICS ── */
         .capsule-colors{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
         .cc-swatch{
@@ -403,6 +535,9 @@ export default function VaultForm() {
         .design-btn.locked{opacity:.4;cursor:not-allowed;position:relative}
         .design-btn.locked::after{content:'🔒';font-size:.7rem;position:absolute;top:6px;right:6px}
         .design-ico{font-size:1.4rem}
+        .tier-hint{font-size:.62rem;font-weight:800;padding:2px 7px;border-radius:100px;margin-top:2px}
+        .tier-hint.pro{background:rgba(245,166,35,.15);color:#9A6900}
+        .tier-hint.ultra{background:rgba(155,89,182,.12);color:#7D3C98}
 
         /* ── DROP ZONES ── */
         .drop-zone{border:2px dashed var(--bdr);border-radius:24px;padding:30px 20px;text-align:center;cursor:pointer;position:relative;background:var(--surf);transition:all .3s var(--easing);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;overflow:hidden}
@@ -427,9 +562,11 @@ export default function VaultForm() {
         .ft-item.file{background:linear-gradient(135deg,var(--surf),var(--white));padding:10px}
         .ft-ico{font-size:2rem;z-index:1;margin-bottom:4px}
         .ft-name{font-size:.65rem;color:var(--txt2);text-align:center;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2;font-weight:800;z-index:1}
+        .ft-uploader{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:.55rem;font-weight:800;text-align:center;padding:3px;z-index:5}
         .ft-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border:none;color:#fff;font-size:.8rem;cursor:none;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:20;opacity:0;transform:scale(.8)}
         .ft-item:hover .ft-rm{opacity:1;transform:scale(1)}
         .ft-rm:hover{background:var(--coral);box-shadow:0 4px 12px rgba(255,107,91,.4)}
+        .ft-rm.disabled{display:none}
 
         /* ── PEOPLE SEARCH (Collaborators/Recipients) ── */
         .people-search-wrap{position:relative;margin-bottom:14px}
@@ -455,21 +592,10 @@ export default function VaultForm() {
         .empty-people{text-align:center;padding:20px;color:var(--txt3);font-size:.8rem;font-weight:700}
         .uac-note{padding:12px 16px;background:rgba(91,138,245,.06);border:1px solid rgba(91,138,245,.15);border-radius:14px;font-size:.75rem;color:#3B5FD9;font-weight:600;display:flex;gap:8px;align-items:flex-start;margin-bottom:16px}
 
-        /* ── RIGHT PANEL (Fixed for Scrolling) ── */
-        .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;min-height:0;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease; overflow:hidden;}
+        /* ── RIGHT PANEL ── */
+        .r-panel{width:320px;min-width:320px;background:var(--coral);border-radius:28px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(255,107,91,.3);flex-shrink:0;position:relative;transition:background .45s ease,box-shadow .45s ease}
         .r-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.12) 0%,transparent 60%),radial-gradient(circle at 10% 80%,rgba(255,255,255,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
-        
-        .rp-inner{
-          position:relative;
-          z-index:1;
-          display:flex;
-          flex-direction:column;
-          flex:1;
-          min-height:0;
-          padding:24px;
-          overflow-y:auto;
-          scrollbar-width:none;
-        }
+        .rp-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;padding:24px;overflow-y:auto;scrollbar-width:none}
         .rp-inner::-webkit-scrollbar{display:none}
 
         .rp-header{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -489,16 +615,18 @@ export default function VaultForm() {
         .preview-vis{font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.2);color:#fff}
 
         .rp-stat-row{display:flex;gap:10px;margin-bottom:24px;flex-shrink:0}
-        .rp-mini-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+        .rp-mini-stat{flex:1;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
         .rp-mini-val{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;line-height:1;margin-bottom:4px}
         .rp-mini-lbl{font-size:.6rem;font-weight:800;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em}
 
         .submit-wrap{margin-top:auto;animation:fadeUp .5s .2s var(--easing) both;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
         .btn-seal{width:100%;padding:16px;background:#fff;border:none;border-radius:100px;color:var(--coral);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:900;cursor:none;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);transition:all .3s var(--easing)}
         .btn-seal:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(0,0,0,.25)}
-        .btn-seal.loading{opacity:.7;pointer-events:none}
+        .btn-save-draft{width:100%;padding:13px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.3);border-radius:100px;color:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:800;cursor:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s var(--easing)}
+        .btn-save-draft:hover{background:rgba(255,255,255,.32);transform:translateY(-2px)}
         .btn-cancel-link{display:block;text-align:center;font-size:.78rem;font-weight:800;color:rgba(255,255,255,.75);text-decoration:none;transition:color .2s;padding:8px;border-radius:100px;border:1.5px solid transparent}
         .btn-cancel-link:hover{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+        .grace-warning{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.3);border-radius:16px;padding:14px;margin-bottom:16px;font-size:.78rem;color:#fff;font-weight:700;display:flex;align-items:center;gap:8px}
 
         #autosaveToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--white);border:1.5px solid var(--coral-l);border-radius:100px;padding:8px 20px;font-size:.85rem;font-weight:800;color:var(--coral);box-shadow:0 12px 30px rgba(255,107,91,.15);display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;z-index:1000;transition:all .4s var(--easing)}
         #autosaveToast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -511,11 +639,11 @@ export default function VaultForm() {
 
       <div id="cur-dot" ref={dotRef}></div>
       <div id="cur-ring" ref={ringRef}></div>
-      <div id="autosaveToast" className={toastMsg ? 'on' : ''}>{toastMsg}</div>
+      <div id="autosaveToast" className={toastMsg ? 'on' : ''}>{toastMsg?.[0]}</div>
 
       <div className="root">
         {/* ════ SIDEBAR ════ */}
-        <aside className={`l-sidebar ${lsbExp ? 'wide' : ''}`} id="lsb">
+        <aside className={`l-sidebar ${lsbExp ? 'wide' : ''}`}>
           <div className="ls-top">
             <button className="ls-hamburger" onClick={() => setLsbExp(!lsbExp)}>{lsbExp ? '✕' : '☰'}</button>
             <span className="ls-brand">TimeVaulth</span>
@@ -538,14 +666,14 @@ export default function VaultForm() {
           </nav>
           <div className="ls-bottom">
             <Link to="/profile" className="ls-selfav-wrap">
-              <div className="ls-selfav" style={{ background: myBrd, padding: '2.5px' }}>
+              <div className="ls-selfav" style={{ background: BORDER_CSS[user?.equipped_border] || BORDER_CSS['border-none'], padding: '2.5px' }}>
                 <div style={{width:'100%',height:'100%',borderRadius:'50%',background:'linear-gradient(135deg,var(--coral),#FF9A8B)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
                   {user?.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${user.avatar_path}`} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : ai(usernameShort)}
                 </div>
               </div>
               <div className="ls-selfinfo">
                 <span className="ls-selfname">{usernameShort}</span>
-                <span className="ls-selfrole">✨ New Draft</span>
+                <span className="ls-selfrole">{phase_label[0]}</span>
               </div>
             </Link>
           </div>
@@ -554,11 +682,11 @@ export default function VaultForm() {
         {/* ════ MAIN CARD ════ */}
         <div className="main-card">
           <div className="mc-top">
-            <div className="mc-title">✨ New Draft</div>
+            <div className="mc-title">{phase_label[0]}</div>
             <div className="mc-spacer"></div>
             <Link to="/my-vaults" className="mc-btn" title="My Vaults">📂</Link>
             <Link to="/dashboard" className="mc-user">
-              <div className="mc-uav" style={{ background: myBrd, padding: '2.5px' }}>
+              <div className="mc-uav" style={{ background: BORDER_CSS[user?.equipped_border] || BORDER_CSS['border-none'], padding: '2.5px' }}>
                 <div style={{width:'100%',height:'100%',borderRadius:'50%',background:'linear-gradient(135deg,var(--coral),#FF9A8B)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
                   {user?.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${user.avatar_path}`} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : ai(usernameShort)}
                 </div>
@@ -569,34 +697,54 @@ export default function VaultForm() {
 
           <div className="mc-body">
             
-            {/* Progress Strip */}
-            <div className="progress-strip">
-              <span className="ps-label">Vault Ready</span>
-              <div className="ps-track"><div className="ps-fill" style={{ width: `${progress}%` }}></div></div>
-              <span className="ps-pct">{progress}%</span>
-              <div className="ps-dots">
-                <div className={`ps-dot ${vault.title ? 'on' : ''}`}></div>
-                <div className={`ps-dot ${vault.story ? 'on' : ''}`}></div>
-                <div className={`ps-dot ${vault.unlock_date ? 'on' : ''}`}></div>
-                <div className={`ps-dot ${coverPreview ? 'on' : ''}`}></div>
-                <div className={`ps-dot ${vault.target_lat && vault.target_lng ? 'on' : ''}`}></div>
+            {mode !== 'create' && (
+              <div className={`phase-banner ${mode}`}>
+                <span className="phase-ico">{phase_label[0][0]}</span>
+                <div className="phase-info">
+                  <div className="phase-name">{vault.title || 'Untitled Draft'}</div>
+                  <div className="phase-sub">{phase_label[1]}{graceLeft ? ` · ⏳ ${graceLeft}` : ''}</div>
+                </div>
+                <span className={`phase-tag ${mode}`}>{mode === 'draft' ? 'DRAFT' : mode === 'grace' ? 'GRACE PERIOD' : 'COLLABORATOR'}</span>
               </div>
-            </div>
+            )}
 
-            <form onSubmit={handleSubmit}>
+            {mode === 'grace' && (
+              <div className="alert alert-gold">
+                ⏳ Grace period active — {graceLeft}. After this window closes, the vault is permanently locked until its unlock date.
+              </div>
+            )}
+
+            {['create', 'draft'].includes(mode) && (
+              <div className="progress-strip">
+                <span className="ps-label">Vault Ready</span>
+                <div className="ps-track"><div className="ps-fill" style={{ width: `${progress}%` }}></div></div>
+                <span className="ps-pct">{progress}%</span>
+                <div className="ps-dots">
+                  <div className={`ps-dot ${(vault.title || '').trim() ? 'on' : ''}`}></div>
+                  <div className={`ps-dot ${(vault.story || '').trim() ? 'on' : ''}`}></div>
+                  <div className={`ps-dot ${vault.unlock_date ? 'on' : ''}`}></div>
+                  <div className={`ps-dot ${coverPreview || vault.cover_path ? 'on' : ''}`}></div>
+                  <div className={`ps-dot ${vault.target_lat && vault.target_lng ? 'on' : ''}`}></div>
+                </div>
+              </div>
+            )}
+
+            {is_creator && (
+            <form onSubmit={e => handleSubmit(e, 'save')} id="vaultForm">
+              
               {/* STEP 1: Basic Info */}
-              <div className="v-card">
+              <div className="v-card" style={{animationDelay:'.04s'}}>
                 <div className="v-card-header"><div className="v-card-title">📝 Basic Info</div><span className="v-card-step">Step 1</span></div>
                 <div className="fg">
-                  <div className="fg-row"><label className="fg-label">Title <span className="fg-req">*</span></label><span className={`fg-count ${vault.title.length > 90 ? 'warn' : ''}`}>{vault.title.length} / 100</span></div>
-                  <input className="finput" type="text" name="title" maxLength="100" required placeholder="Name this memory..." value={vault.title} onChange={handleChange} />
+                  <div className="fg-row"><label className="fg-label">Title <span className="fg-req">*</span></label><span className={`fg-count ${(vault.title?.length || 0) > 90 ? 'warn' : ''}`}>{vault.title?.length || 0} / 100</span></div>
+                  <input className="finput" type="text" name="title" maxLength="100" required placeholder="Name this memory..." value={vault.title || ''} onChange={handleChange} />
                 </div>
                 <div className="fg">
                   <div className="fg-row"><label className="fg-label">Story / Message</label><span className="fg-hint">optional but meaningful</span></div>
-                  <textarea className="ftextarea" name="story" maxLength="2000" placeholder="Write what this memory means to you..." value={vault.story} onChange={handleChange}></textarea>
+                  <textarea className="ftextarea" name="story" maxLength="2000" placeholder="Write what this memory means to you..." value={vault.story || ''} onChange={handleChange}></textarea>
                   <div className="fg-footer">
-                    <span className="fg-words">{vault.story.split(/\s+/).filter(Boolean).length} words</span>
-                    <span className={`fg-count ${vault.story.length > 1800 ? 'warn' : ''}`}>{vault.story.length} / 2000</span>
+                    <span className="fg-words">{(vault.story || '').split(/\s+/).filter(Boolean).length} words</span>
+                    <span className={`fg-count ${(vault.story?.length || 0) > 1800 ? 'warn' : ''}`}>{vault.story?.length || 0} / 2000</span>
                   </div>
                 </div>
                 <div className="fg">
@@ -608,7 +756,7 @@ export default function VaultForm() {
                       </button>
                     ))}
                   </div>
-                  <div className="mood-tip"><span>💡</span><span>{moodTips[vault.mood]}</span></div>
+                  <div className="mood-tip"><span>💡</span><span>{moodTips[vault.mood] || 'Pick a mood that captures this memory.'}</span></div>
                 </div>
               </div>
 
@@ -623,15 +771,15 @@ export default function VaultForm() {
                     <button type="button" className="sc-btn" onClick={() => handleShortcut('1m')}>+1 Month</button>
                     <button type="button" className="sc-btn" onClick={() => handleShortcut('6m')}>+6 Months</button>
                     <button type="button" className="sc-btn" onClick={() => handleShortcut('1y')}>+1 Year</button>
+                    <button type="button" className="sc-btn" onClick={() => handleShortcut('5y')}>+5 Years</button>
                   </div>
-                  <input className="finput" type="datetime-local" name="unlock_date" required value={vault.unlock_date} onChange={handleChange} />
+                  <input className="finput" type="datetime-local" name="unlock_date" required value={vault.unlock_date || ''} onChange={handleChange} />
                   <div className={`countdown ${cd ? 'on' : ''}`}>
                     <span className="cd-dot"></span>
                     <span>{cd ? (cd.d > 0 ? `Opens in ${cd.d}d ${cd.h}h ${cd.m}m` : `Opens in ${cd.h}h ${cd.m}m`) : 'Opens in...'}</span>
                   </div>
                 </div>
                 
-                {/* 📍 BINABALIK ANG LOCATION DITO */}
                 <div className="fg">
                   <div className="fg-row"><label className="fg-label">📍 Location</label><span className="fg-hint">optional geo-pin</span></div>
                   <div className="loc-row">
@@ -653,6 +801,18 @@ export default function VaultForm() {
               {/* STEP 3: Visibility */}
               <div className="v-card" style={{animationDelay:'.12s'}}>
                 <div className="v-card-header"><div className="v-card-title">👁️ Visibility</div><span className="v-card-step">Step 3</span></div>
+                
+                {mode === 'create' && (
+                  <div className={`slot-bar ${bar_cls}`}>
+                    <span>{vaultCount} / {vault_limit === 999999 ? '∞' : vault_limit} vaults used</span>
+                    <div className="slot-pips">
+                      {Array.from({ length: pip_max }).map((_, i) => (
+                        <div key={i} className={`slot-pip ${i >= pip_used ? 'empty' : ''}`}></div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="vis-pills">
                   {[
                     ['private', '🔒', 'Private', 'Only visible to you. No collaborators or recipients allowed.'],
@@ -672,7 +832,7 @@ export default function VaultForm() {
               <div className="v-card" style={{animationDelay:'.16s'}}>
                 <div className="v-card-header"><div className="v-card-title">🎨 Capsule Style</div><span className="v-card-step">Step 4</span></div>
                 <div className="fg">
-                  <div className="fg-row"><label className="fg-label">Capsule Color</label></div>
+                  <div className="fg-row"><label className="fg-label">Capsule Color</label><span className="fg-hint">accent color for your vault</span></div>
                   <div className="capsule-colors">
                     {capsuleColors.map(clr => (
                       <div key={clr} className={`cc-swatch ${vault.capsule_color === clr ? 'picked' : ''}`} style={{background: clr}} onClick={() => setVault({...vault, capsule_color: clr})}></div>
@@ -680,14 +840,18 @@ export default function VaultForm() {
                   </div>
                 </div>
                 <div className="fg">
-                  <div className="fg-row"><label className="fg-label">Capsule Design</label></div>
+                  <div className="fg-row"><label className="fg-label">Capsule Design</label>
+                    {tier === 'standard' && <span className="fg-hint">Upgrade for more designs</span>}
+                  </div>
                   <div className="design-grid">
-                    {allDesigns.map(d => {
-                      const unlocked = d.tiers.includes(user?.subscription_tier || 'standard');
+                    {Object.entries(all_designs).map(([key, d]) => {
+                      const unlocked = d.tiers.includes(tier);
+                      const needs = !d.tiers.includes('standard') ? (d.tiers.includes('ultra') && !d.tiers.includes('pro') ? 'ultra' : 'pro') : '';
                       return (
-                        <button key={d.id} type="button" disabled={!unlocked} className={`design-btn ${!unlocked ? 'locked' : ''} ${vault.capsule_design === d.id && unlocked ? 'picked' : ''}`} onClick={() => setVault({...vault, capsule_design: d.id})}>
+                        <button key={key} type="button" disabled={!unlocked} data-design={key} className={`design-btn ${!unlocked ? 'locked' : ''} ${vault.capsule_design === key && unlocked ? 'picked' : ''}`} onClick={() => setVault({...vault, capsule_design: key})}>
                           <span className="design-ico">{d.ico}</span>
                           {d.label}
+                          {needs && <span className={`tier-hint ${needs}`}>{needs.charAt(0).toUpperCase() + needs.slice(1)}</span>}
                         </button>
                       );
                     })}
@@ -698,97 +862,143 @@ export default function VaultForm() {
               {/* STEP 5: Cover Photo */}
               <div className="v-card" style={{animationDelay:'.20s'}}>
                 <div className="v-card-header"><div className="v-card-title">🖼️ Cover Photo</div><span className="v-card-step">Step 5</span></div>
-                <div className={`drop-zone ${coverPreview ? 'has-cover' : ''} ${isHoveringCover ? 'over' : ''}`} 
-                     onClick={() => !coverPreview && coverInputRef.current.click()}
-                     onDragOver={(e) => { e.preventDefault(); setIsHoveringCover(true); }}
-                     onDragLeave={() => setIsHoveringCover(false)}
-                     onDrop={(e) => { e.preventDefault(); setIsHoveringCover(false); if(e.dataTransfer.files[0]){ setCoverFile(e.dataTransfer.files[0]); setCoverPreview(URL.createObjectURL(e.dataTransfer.files[0])); } }}>
+                <div className={`drop-zone ${coverPreview || vault.cover_path ? 'has-cover' : ''}`} 
+                     onClick={() => !(coverPreview || vault.cover_path) && coverInputRef.current.click()}
+                     onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('over'); }}
+                     onDragLeave={(e) => e.currentTarget.classList.remove('over')}
+                     onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('over'); if(e.dataTransfer.files[0]) handleCoverSelect({target:{files:e.dataTransfer.files}}); }}>
                   
                   <input type="file" ref={coverInputRef} accept="image/*" style={{display:'none'}} onChange={handleCoverSelect} />
                   
-                  {!coverPreview && (
+                  {!(coverPreview || vault.cover_path) && (
                     <div className="dz-content">
                       <span className="dz-ico">🖼️</span>
                       <div className="dz-title">Click or drop an image</div>
                       <div className="dz-sub">JPG · PNG · WEBP</div>
                     </div>
                   )}
-                  {coverPreview && (
+                  {(coverPreview || vault.cover_path) && (
                     <div className="cover-preview-wrap on">
-                      <img className="cover-preview" src={coverPreview} alt="Cover" />
-                      <button type="button" className="cover-rm" onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(null); }}>✕</button>
+                      <img className="cover-preview" src={coverPreview || `https://your-supabase-url/storage/v1/object/public/${vault.cover_path}`} alt="Cover" />
+                      <button type="button" className="cover-rm" onClick={(e) => { e.stopPropagation(); setCoverFile(null); setCoverPreview(null); setVault({...vault, cover_path: ''}); }}>✕</button>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* 📎 BINALIK ANG FILES UPLOAD (Step 6) */}
-              <div className="v-card" style={{animationDelay:'.24s'}}>
-                <div className="v-card-header"><div className="v-card-title">📎 Files & Media</div><span className="v-card-step">Step 6</span></div>
-                <div style={{background:'var(--surf)',border:'1.5px solid var(--bdr)',padding:'12px 16px',borderRadius:'14px',marginBottom:'20px',fontSize:'.8rem',fontWeight:'700',color:'var(--txt2)',display:'flex',alignItems:'center',gap:'8px'}}>
-                  ℹ️ <span><strong style={{color:'var(--coral)'}}>Plan Limits</strong> — up to <strong style={{color:'var(--coral)'}}>50 MB</strong> total media.</span>
-                </div>
-                <div className={`drop-zone ${vaultFiles.length > 0 ? 'has-files' : ''}`} onClick={() => filesInputRef.current.click()}>
-                  <input type="file" ref={filesInputRef} multiple style={{display:'none'}} onChange={handleFilesSelect} />
-                  <div className="dz-content" style={{ display: vaultFiles.length > 0 ? 'none' : 'block' }}>
-                    <span className="dz-ico">📂</span>
-                    <div className="dz-title">Click or drop files</div>
-                    <div className="dz-sub">Images · Videos · Docs · Audio</div>
-                  </div>
-                  {vaultFiles.length > 0 && (
-                    <div className="file-thumbs" onClick={(e) => e.stopPropagation()}>
-                      {vaultFiles.map((f, idx) => (
-                        <div key={idx} className={`ft-item ${!f.preview ? 'file' : ''}`}>
-                          {f.preview ? <img src={f.preview} alt="" /> : <><span className="ft-ico">📎</span><span className="ft-name">{f.name}</span></>}
-                          <button type="button" className="ft-rm" onClick={() => removeFile(idx)}>✕</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 🤝 BINALIK ANG COLLABORATORS (Step 7) */}
-              {vault.visibility !== 'private' && (
-                <div className="v-card" style={{animationDelay:'.28s'}}>
-                  <div className="v-card-header"><div className="v-card-title">🤝 Collaborators</div><span className="v-card-step">Step 7</span></div>
-                  <div className="uac-note">🔐 Collaborators can upload files and delete their own uploads only.</div>
-                  <div className="people-search-wrap">
-                    <span className="people-search-ico">🔍</span>
-                    <input className="people-search-input" type="text" placeholder="Search friends to invite…" value={collabSearch} onChange={(e) => setCollabSearch(e.target.value)} />
-                  </div>
-                  <div className="people-list">
-                    {collaborators.length > 0 ? collaborators.map((c, i) => (
-                      <div key={i} className="person-row">
-                        <div className="person-av">{ai(c)}</div><span className="person-name">@{c}</span><span className="person-role collab">Collaborator</span>
-                        <button type="button" className="person-rm" onClick={() => setCollaborators(collaborators.filter(x => x !== c))}>✕</button>
-                      </div>
-                    )) : <div className="empty-people">No collaborators yet.</div>}
-                  </div>
-                </div>
-              )}
-
-              {/* 📬 BINALIK ANG RECIPIENTS (Step 8) */}
-              {vault.visibility !== 'private' && (
-                <div className="v-card" style={{animationDelay:'.32s'}}>
-                  <div className="v-card-header"><div className="v-card-title">📬 Recipients</div><span className="v-card-step">Step 8</span></div>
-                  <div className="uac-note" style={{background:'rgba(29,158,117,.06)',borderColor:'rgba(29,158,117,.18)',color:'var(--teal)'}}>📬 Recipients are notified when sealed and opened.</div>
-                  <div className="people-search-wrap">
-                    <span className="people-search-ico">🔍</span>
-                    <input className="people-search-input" type="text" placeholder="Search friends to add…" value={recipSearch} onChange={(e) => setRecipSearch(e.target.value)} />
-                  </div>
-                  <div className="people-list">
-                    {recipients.length > 0 ? recipients.map((r, i) => (
-                      <div key={i} className="person-row">
-                        <div className="person-av">{ai(r)}</div><span className="person-name">@{r}</span><span className="person-role recipient">Recipient</span>
-                        <button type="button" className="person-rm" onClick={() => setRecipients(recipients.filter(x => x !== r))}>✕</button>
-                      </div>
-                    )) : <div className="empty-people">No recipients yet.</div>}
-                  </div>
-                </div>
-              )}
 
             </form>
+            )}
+
+            {/* STEP 6: Files Upload (Drafts only) */}
+            {is_draft_mode && (
+            <div className="v-card" style={{animationDelay:'.24s'}}>
+              <div className="v-card-header"><div className="v-card-title">📎 Files & Media</div><span className="v-card-step">{is_creator ? 'Step 6' : 'Upload Files'}</span></div>
+              
+              {!is_creator && (
+                <div className="uac-note">
+                  ℹ️ As a collaborator you can upload files and remove your own uploads. Only the creator can remove other collaborators' files.
+                </div>
+              )}
+
+              <div style={{background:'var(--surf)',border:'1.5px solid var(--bdr)',padding:'12px 16px',borderRadius:'14px',marginBottom:'20px',fontSize:'.8rem',fontWeight:'700',color:'var(--txt2)',display:'flex',alignItems:'center',gap:'8px'}}>
+                ℹ️ <span><strong style={{color:'var(--coral)'}}>{tier.charAt(0).toUpperCase() + tier.slice(1)} Plan</strong> — up to <strong style={{color:'var(--coral)'}}>{tier === 'ultra' ? '1 GB' : (tier === 'pro' ? '250 MB' : '50 MB')}</strong> total media.</span>
+              </div>
+
+              <div className={`drop-zone ${(vaultFiles.length + existingFiles.length) > 0 ? 'has-files' : ''}`} onClick={() => filesInputRef.current.click()}>
+                <input type="file" ref={filesInputRef} multiple style={{display:'none'}} onChange={handleFilesSelect} />
+                <div className="dz-content" style={{ display: (vaultFiles.length + existingFiles.length) > 0 ? 'none' : 'block' }}>
+                  <span className="dz-ico">📂</span>
+                  <div className="dz-title" style={{color:(vaultFiles.length + existingFiles.length) > 0 ? 'var(--coral)' : ''}}>
+                    {(vaultFiles.length + existingFiles.length) > 0 ? '+ Click or drop more files' : 'Click or drop files'}
+                  </div>
+                  <div className="dz-sub" style={{display:(vaultFiles.length + existingFiles.length) > 0 ? 'none' : 'block'}}>Images · Videos · Docs · Audio</div>
+                </div>
+                {(vaultFiles.length > 0 || existingFiles.length > 0) && (
+                  <div className="file-thumbs" onClick={(e) => e.stopPropagation()}>
+                    {existingFiles.map((f, idx) => {
+                       const isImg = f.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                       const ext = f.file_name.split('.').pop().toUpperCase();
+                       const canRm = is_creator || f.uploaded_by === user.id;
+                       return (
+                         <div key={`ef-${idx}`} className={`ft-item ${!isImg ? 'file' : ''}`}>
+                           {isImg ? <img src={`https://your-supabase-url/storage/v1/object/public/${f.file_path}`} alt="" /> : <><span className="ft-ico">{EXT_ICONS[ext]||'📎'}</span><span className="ft-name">{f.file_name}</span></>}
+                           {f.uploader_name && <div className="ft-uploader">{ai(f.uploader_name)}</div>}
+                           {canRm && <button type="button" className="ft-rm" onClick={() => removeExistingFile(f.id)}>✕</button>}
+                         </div>
+                       );
+                    })}
+                    {vaultFiles.map((f, idx) => (
+                      <div key={idx} className={`ft-item new-file ${!f.preview ? 'file' : ''}`}>
+                        {f.preview ? <img src={f.preview} alt="" /> : <><span className="ft-ico">{EXT_ICONS[f.name.split('.').pop().toUpperCase()]||'📎'}</span><span className="ft-name">{f.name}</span></>}
+                        <button type="button" className="ft-rm" onClick={() => removeFile(idx)}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* STEP 7: Collaborators */}
+            {is_creator && is_draft_mode && vault.visibility !== 'private' && (
+              <div className="v-card" style={{animationDelay:'.28s'}}>
+                <div className="v-card-header"><div className="v-card-title">🤝 Collaborators</div><span className="v-card-step">Step 7</span></div>
+                <div className="uac-note">🔐 Collaborators can upload files and delete their own uploads only. The creator has full control over all files.</div>
+                <div className="people-search-wrap">
+                  <span className="people-search-ico">🔍</span>
+                  <input className="people-search-input" type="text" placeholder="Search friends to invite…" value={collabSearch} onChange={(e) => { setCollabSearch(e.target.value); searchFriends(e.target.value, 'collab'); }} />
+                  {collabSearch && (
+                    <div className="people-dropdown open">
+                      {collabResults.length > 0 ? collabResults.map(u => (
+                        <div key={u.id} className="pd-item" onClick={() => { setCollaborators([...collaborators, u]); setCollabSearch(''); setCollabResults([]); }}>
+                          <div className="pd-av">{ai(u.username)}</div>@{u.username.split('@')[0]}
+                        </div>
+                      )) : <div className="pd-item" style={{color:'var(--txt3)'}}>No friends found</div>}
+                    </div>
+                  )}
+                </div>
+                <div className="people-list">
+                  {collaborators.length > 0 ? collaborators.map((c, i) => (
+                    <div key={i} className="person-row">
+                      <div className="person-av">{c.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${c.avatar_path}`} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : ai(c.username)}</div>
+                      <span className="person-name">@{c.username.split('@')[0]}</span><span className="person-role collab">Collaborator</span>
+                      <button type="button" className="person-rm" onClick={() => setCollaborators(collaborators.filter(x => x.user_id !== c.user_id))}>✕</button>
+                    </div>
+                  )) : <div className="empty-people">No collaborators yet. Invite a friend above.</div>}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 8: Recipients */}
+            {is_creator && vault.visibility !== 'private' && (
+              <div className="v-card" style={{animationDelay:'.32s'}}>
+                <div className="v-card-header"><div className="v-card-title">📬 Recipients</div><span className="v-card-step">{is_draft_mode ? 'Step 8' : 'Recipients'}</span></div>
+                <div className="uac-note" style={{background:'rgba(29,158,117,.06)',borderColor:'rgba(29,158,117,.18)',color:'var(--teal)'}}>📬 Recipients are notified when the vault is sealed and again when it opens. They are strictly viewers post-opening.</div>
+                <div className="people-search-wrap">
+                  <span className="people-search-ico">🔍</span>
+                  <input className="people-search-input" type="text" placeholder="Search friends to add…" value={recipSearch} onChange={(e) => { setRecipSearch(e.target.value); searchFriends(e.target.value, 'recip'); }} />
+                  {recipSearch && (
+                    <div className="people-dropdown open">
+                      {recipResults.length > 0 ? recipResults.map(u => (
+                        <div key={u.id} className="pd-item" onClick={() => { setRecipients([...recipients, u]); setRecipSearch(''); setRecipResults([]); }}>
+                          <div className="pd-av">{ai(u.username)}</div>@{u.username.split('@')[0]}
+                        </div>
+                      )) : <div className="pd-item" style={{color:'var(--txt3)'}}>No friends found</div>}
+                    </div>
+                  )}
+                </div>
+                <div className="people-list">
+                  {recipients.length > 0 ? recipients.map((r, i) => (
+                    <div key={i} className="person-row">
+                      <div className="person-av">{r.avatar_path ? <img src={`https://your-supabase-url/storage/v1/object/public/${r.avatar_path}`} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : ai(r.username)}</div>
+                      <span className="person-name">@{r.username.split('@')[0]}</span><span className="person-role recipient">Recipient</span>
+                      <button type="button" className="person-rm" onClick={() => setRecipients(recipients.filter(x => x.user_id !== r.user_id))}>✕</button>
+                    </div>
+                  )) : <div className="empty-people">No recipients yet. Add friends above.</div>}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -798,10 +1008,10 @@ export default function VaultForm() {
             <div className="rp-header"><span>👁 Live Preview</span><span className="live-dot"></span></div>
 
             <div className="preview-card">
-              {coverPreview ? <img className="preview-cover" src={coverPreview} alt="" style={{display:'block'}} /> : <div className="preview-cover-ph">🛡️</div>}
+              {coverPreview || vault.cover_path ? <img className="preview-cover" src={coverPreview || `https://your-supabase-url/storage/v1/object/public/${vault.cover_path}`} alt="" style={{display:'block'}} /> : <div className="preview-cover-ph">🛡️</div>}
               <div className="preview-mood">
-                <span className="preview-capsule-dot" style={{background: vault.capsule_color}}></span>
-                {moodIco[vault.mood]} {vault.mood}
+                <span className="preview-capsule-dot" style={{background: vault.capsule_color || '#FF6B5B'}}></span>
+                {moodIco[vault.mood] || '💜'} {vault.mood || 'Happy'}
               </div>
               <div className={`preview-title ${vault.title ? '' : 'ph'}`}>{vault.title || 'Your vault title...'}</div>
               <div className={`preview-story ${vault.story ? '' : 'ph'}`}>{vault.story || 'Your story will appear here...'}</div>
@@ -814,15 +1024,38 @@ export default function VaultForm() {
             </div>
 
             <div className="rp-stat-row">
-              <div className="rp-mini-stat"><div className="rp-mini-val">{collaborators.length}</div><div className="rp-mini-lbl">Collabs</div></div>
-              <div className="rp-mini-stat"><div className="rp-mini-val">{recipients.length}</div><div className="rp-mini-lbl">Recipients</div></div>
-              <div className="rp-mini-stat"><div className="rp-mini-val">{vaultFiles.length}</div><div className="rp-mini-lbl">Files</div></div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">{collaborators.length}</div>
+                <div className="rp-mini-lbl">Collabs</div>
+              </div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">{recipients.length}</div>
+                <div className="rp-mini-lbl">Recipients</div>
+              </div>
+              <div className="rp-mini-stat">
+                <div className="rp-mini-val">{vaultFiles.length + existingFiles.length}</div>
+                <div className="rp-mini-lbl">Files</div>
+              </div>
             </div>
 
             <div className="submit-wrap">
-              <button type="submit" onClick={handleSubmit} className={`btn-seal ${submitting ? 'loading' : ''}`}>
-                {submitting ? '⏳ Processing...' : '✨ Create Draft'}
-              </button>
+              {mode === 'grace' ? (
+                <>
+                  <div className="grace-warning">⏳ Grace period: {graceLeft}. Save changes now.</div>
+                  <button type="button" onClick={e => handleSubmit(e, 'save')} className={`btn-seal ${submitting ? 'loading' : ''}`}>💾 Save Changes</button>
+                </>
+              ) : mode === 'draft' && is_creator ? (
+                <>
+                  <button type="button" onClick={e => handleSubmit(e, 'save')} className="btn-save-draft">💾 Save Draft Settings</button>
+                  <button type="button" onClick={e => window.confirm('Seal this vault? The 24-hour grace period will start now.') && handleSubmit(e, 'seal')} className={`btn-seal ${submitting ? 'loading' : ''}`}>🔒 Seal Vault</button>
+                </>
+              ) : mode === 'create' ? (
+                <button type="button" onClick={e => handleSubmit(e, 'save')} className={`btn-seal ${submitting ? 'loading' : ''}`}>✨ Create Draft</button>
+              ) : mode === 'collaborator' ? (
+                <div style={{background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.25)',borderRadius:'16px',padding:'14px',fontSize:'.78rem',color:'#fff',fontWeight:'700',textAlign:'center'}}>
+                  🤝 You are a collaborator.<br/>Upload files using the form above.
+                </div>
+              ) : null}
               <Link to="/my-vaults" className="btn-cancel-link">← Back to My Vaults</Link>
             </div>
           </div>
